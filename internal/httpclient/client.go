@@ -104,7 +104,7 @@ func (c *Client) Get(ctx context.Context, url string, headers map[string]string)
 	// Not modified — refresh cache TTL
 	if resp.StatusCode == http.StatusNotModified && staleEntry != nil {
 		if c.cache != nil {
-			c.cache.Set(url, staleEntry)
+			_ = c.cache.Set(url, staleEntry)
 		}
 		return &Response{Body: staleEntry.Body, StatusCode: staleEntry.StatusCode, FromCache: true}, nil
 	}
@@ -120,7 +120,7 @@ func (c *Client) Get(ctx context.Context, url string, headers map[string]string)
 
 	// Store in cache
 	if c.cache != nil && !c.noCache {
-		c.cache.Set(url, &cache.Entry{
+		_ = c.cache.Set(url, &cache.Entry{
 			Body:       body,
 			ETag:       resp.Header.Get("ETag"),
 			LastMod:    resp.Header.Get("Last-Modified"),

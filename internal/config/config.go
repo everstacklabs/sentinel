@@ -100,17 +100,17 @@ func Load(cfgFile string) (*Config, error) {
 	v.AutomaticEnv()
 
 	// Bind specific env vars
-	v.BindEnv("github.token", "GITHUB_TOKEN")
-	v.BindEnv("openai.api_key", "OPENAI_API_KEY")
-	v.BindEnv("anthropic.api_key", "ANTHROPIC_API_KEY")
-	v.BindEnv("anthropic.base_url", "SENTINEL_ANTHROPIC_BASE_URL")
-	v.BindEnv("google.api_key", "GEMINI_API_KEY")
-	v.BindEnv("google.base_url", "SENTINEL_GOOGLE_BASE_URL")
-	v.BindEnv("judge.enabled", "SENTINEL_JUDGE_ENABLED")
-	v.BindEnv("judge.provider", "SENTINEL_JUDGE_PROVIDER")
-	v.BindEnv("judge.model", "SENTINEL_JUDGE_MODEL")
-	v.BindEnv("judge.on_reject", "SENTINEL_JUDGE_ON_REJECT")
-	v.BindEnv("judge.max_tokens", "SENTINEL_JUDGE_MAX_TOKENS")
+	_ = v.BindEnv("github.token", "GITHUB_TOKEN")
+	_ = v.BindEnv("openai.api_key", "OPENAI_API_KEY")
+	_ = v.BindEnv("anthropic.api_key", "ANTHROPIC_API_KEY")
+	_ = v.BindEnv("anthropic.base_url", "SENTINEL_ANTHROPIC_BASE_URL")
+	_ = v.BindEnv("google.api_key", "GEMINI_API_KEY")
+	_ = v.BindEnv("google.base_url", "SENTINEL_GOOGLE_BASE_URL")
+	_ = v.BindEnv("judge.enabled", "SENTINEL_JUDGE_ENABLED")
+	_ = v.BindEnv("judge.provider", "SENTINEL_JUDGE_PROVIDER")
+	_ = v.BindEnv("judge.model", "SENTINEL_JUDGE_MODEL")
+	_ = v.BindEnv("judge.on_reject", "SENTINEL_JUDGE_ON_REJECT")
+	_ = v.BindEnv("judge.max_tokens", "SENTINEL_JUDGE_MAX_TOKENS")
 
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

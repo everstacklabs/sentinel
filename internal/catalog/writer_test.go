@@ -52,7 +52,9 @@ func TestWriteNewModel(t *testing.T) {
 func TestWriteUpdatedModelPreservesManualFields(t *testing.T) {
 	tmpDir := t.TempDir()
 	modelsDir := filepath.Join(tmpDir, "providers", "openai", "models")
-	os.MkdirAll(modelsDir, 0o755)
+	if err := os.MkdirAll(modelsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
 
 	// Write an existing file with a manual field (x_updater)
 	existingYAML := `name: gpt-4o
@@ -72,7 +74,9 @@ modalities:
         - text
 `
 	existingPath := filepath.Join(modelsDir, "gpt-4o.yaml")
-	os.WriteFile(existingPath, []byte(existingYAML), 0o644)
+	if err := os.WriteFile(existingPath, []byte(existingYAML), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
 
 	w := NewWriter(tmpDir)
 
@@ -114,7 +118,9 @@ modalities:
 func TestWriteUpdatedModelPreservesFieldOrdering(t *testing.T) {
 	tmpDir := t.TempDir()
 	modelsDir := filepath.Join(tmpDir, "providers", "openai", "models")
-	os.MkdirAll(modelsDir, 0o755)
+	if err := os.MkdirAll(modelsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
 
 	// Original ordering: name, display_name, family, status, limits
 	existingYAML := `name: gpt-4o
@@ -132,7 +138,9 @@ modalities:
         - text
 `
 	existingPath := filepath.Join(modelsDir, "gpt-4o.yaml")
-	os.WriteFile(existingPath, []byte(existingYAML), 0o644)
+	if err := os.WriteFile(existingPath, []byte(existingYAML), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
 
 	w := NewWriter(tmpDir)
 	discovered := &Model{
@@ -169,7 +177,9 @@ modalities:
 func TestWriteNoChangesSkipsWrite(t *testing.T) {
 	tmpDir := t.TempDir()
 	modelsDir := filepath.Join(tmpDir, "providers", "openai", "models")
-	os.MkdirAll(modelsDir, 0o755)
+	if err := os.MkdirAll(modelsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
 
 	existingYAML := `name: gpt-4o
 display_name: GPT-4O
@@ -186,7 +196,9 @@ modalities:
         - text
 `
 	existingPath := filepath.Join(modelsDir, "gpt-4o.yaml")
-	os.WriteFile(existingPath, []byte(existingYAML), 0o644)
+	if err := os.WriteFile(existingPath, []byte(existingYAML), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
 
 	w := NewWriter(tmpDir)
 	// Same data — no changes
@@ -221,8 +233,12 @@ status: stable
 status: beta
 `
 	var dst, src yaml.Node
-	yaml.Unmarshal([]byte(dstYAML), &dst)
-	yaml.Unmarshal([]byte(srcYAML), &src)
+	if err := yaml.Unmarshal([]byte(dstYAML), &dst); err != nil {
+		t.Fatalf("unmarshal dst: %v", err)
+	}
+	if err := yaml.Unmarshal([]byte(srcYAML), &src); err != nil {
+		t.Fatalf("unmarshal src: %v", err)
+	}
 
 	merged := mergeNodes(&dst, &src)
 

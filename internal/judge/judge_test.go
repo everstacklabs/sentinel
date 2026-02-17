@@ -85,17 +85,6 @@ func withRejectionResponse() string {
 	return string(b)
 }
 
-func withFlagResponse() string {
-	r := Result{
-		Verdicts: []ModelVerdict{
-			{ModelName: "gpt-5", Verdict: VerdictFlag, Confidence: 0.7, Concerns: []string{"unusual capabilities"}, Reasoning: "needs review"},
-			{ModelName: "gpt-4o", Verdict: VerdictApprove, Confidence: 0.9, Reasoning: "looks correct"},
-		},
-	}
-	b, _ := json.Marshal(r)
-	return string(b)
-}
-
 // --- Evaluate tests ---
 
 func TestEvaluate_AllApproved(t *testing.T) {

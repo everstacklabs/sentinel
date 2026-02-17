@@ -169,7 +169,7 @@ func discoverCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("provider", "", "Provider to discover models from")
-	cmd.MarkFlagRequired("provider")
+	_ = cmd.MarkFlagRequired("provider")
 
 	return cmd
 }

@@ -264,7 +264,7 @@ func (p *Pipeline) updateMetadata(provider string, cs *diff.ChangeSet) {
 			LastVerifiedAt: now,
 			Sources:        p.cfg.Sources,
 		}
-		writer.WriteModel(provider, m)
+		_, _ = writer.WriteModel(provider, m)
 	}
 }
 
@@ -292,9 +292,9 @@ func bumpSemver(version string, hasNew bool) (string, error) {
 	}
 
 	var major, minor, patch int
-	fmt.Sscanf(parts[0], "%d", &major)
-	fmt.Sscanf(parts[1], "%d", &minor)
-	fmt.Sscanf(parts[2], "%d", &patch)
+	_, _ = fmt.Sscanf(parts[0], "%d", &major)
+	_, _ = fmt.Sscanf(parts[1], "%d", &minor)
+	_, _ = fmt.Sscanf(parts[2], "%d", &patch)
 
 	if hasNew {
 		minor++
