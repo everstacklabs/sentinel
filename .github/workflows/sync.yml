@@ -1,0 +1,62 @@
+name: Model Sync
+
+on:
+  schedule:
+    - cron: "0 6,18 * * *" # Every 12 hours at 6am and 6pm UTC
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: "Comma-separated providers to sync (blank for all)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run (preview changes only)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build
+        run: make build
+
+      - name: Checkout model catalog
+        uses: actions/checkout@v4
+        with:
+          repository: everstacklabs/everstack
+          token: ${{ secrets.GH_PAT }}
+          path: model-catalog
+
+      - name: Run sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SENTINEL_CATALOG_PATH: ./model-catalog
+          SENTINEL_GITHUB_OWNER: everstacklabs
+          SENTINEL_GITHUB_REPO: everstack
+          SENTINEL_GITHUB_BASE_BRANCH: main
+        run: |
+          ARGS="sync"
+
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          if [ -n "${{ github.event.inputs.providers }}" ]; then
+            ARGS="$ARGS --providers=${{ github.event.inputs.providers }}"
+          fi
+
+          ./bin/sentinel $ARGS
