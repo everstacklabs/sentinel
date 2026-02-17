@@ -171,11 +171,7 @@ func shouldSkip(id string, methods []string) bool {
 			break
 		}
 	}
-	if !hasGenerate {
-		return true
-	}
-
-	return false
+	return !hasGenerate
 }
 
 func inferFamily(id string) string {

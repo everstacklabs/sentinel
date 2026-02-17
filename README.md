@@ -1,8 +1,41 @@
-# Sentinel
+<p align="center">
+  <img src=".github/portalis-logo-white.svg" alt="Sentinel" width="120" height="120" />
+</p>
 
-Sentinel is a Go CLI that discovers AI model metadata from provider APIs, diffs it against a YAML-based model catalog, and opens pull requests with the changes. It runs on a 12-hour cron via GitHub Actions, or manually from the command line.
+<h1 align="center">Sentinel</h1>
 
-It exists because maintaining 75+ models across multiple providers by hand does not scale. No existing tool combines scheduled multi-provider discovery with metadata-rich catalog updates (pricing, context windows, capabilities) and risk-gated pull requests.
+<p align="center">
+  <strong>Automated model catalog maintenance for AI providers.</strong><br/>
+  Discovers models, diffs metadata, validates changes, opens pull requests.<br/>
+  Runs on a 12-hour cron. No manual intervention required.
+</p>
+
+<p align="center">
+  <a href="LICENSE">
+    <img src="https://img.shields.io/static/v1?label=License&message=MIT&color=000" />
+  </a>
+  <a href="https://github.com/everstacklabs/sentinel">
+    <img src="https://img.shields.io/static/v1?label=Core&message=Go%201.23&color=00ADD8" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="#how-it-works">How It Works</a> &middot;
+  <a href="#commands">Commands</a> &middot;
+  <a href="#configuration">Configuration</a> &middot;
+  <a href="#adding-a-provider">Adding a Provider</a> &middot;
+  <a href="#development">Development</a>
+</p>
+
+---
+
+## The Problem
+
+Maintaining 75+ AI models across multiple providers by hand does not scale. Pricing changes, new models appear, context windows get updated, capabilities shift -- and nobody notices until something breaks. No existing tool combines scheduled multi-provider discovery with metadata-rich catalog updates (pricing, context windows, capabilities) and risk-gated pull requests.
+
+Sentinel automates the entire loop: discover what changed, diff it against the catalog, validate the data, and open a PR for human review.
+
+---
 
 ## How it works
 
@@ -32,17 +65,21 @@ flowchart TB
 
 Each provider runs in isolation. If one provider fails, the others still produce their PRs.
 
-## Pipeline steps
+### Pipeline
 
-1. **Discover** -- Each provider adapter calls its source APIs and returns a list of `DiscoveredModel` structs matching the catalog YAML schema.
-2. **Diff** -- Compares discovered models against the existing catalog. Produces a changeset: new models, updated fields, deprecation candidates, and possible renames (heuristic: same family + similar limits/cost).
-3. **Validate** -- Checks every model against schema rules: required fields, pricing bounds, limits ranges, filename-to-name consistency. Errors block the PR; warnings appear in the PR body.
-4. **Judge** (optional, off by default) -- Sends the changeset to an LLM (Anthropic or OpenAI) to flag suspicious capabilities, pricing, or limits. Non-fatal: if the LLM call fails, the pipeline logs a warning and continues.
-5. **Smart merge** -- Writes YAML using `yaml.Node` trees. Overlays discovered fields onto existing files, preserving hand-edited keys, comments, and field ordering. Skips writing if nothing changed.
-6. **Version bump** -- MINOR for new models, PATCH for updates only. Never auto-MAJOR.
-7. **Manifest** -- Regenerates `manifest.yaml` with provider list, file paths, and aggregate stats.
-8. **Risk gates** -- Evaluates the changeset against thresholds. >25 changes, >3 deprecation candidates, or price deltas >35%/2x result in a draft PR. In strict mode, blocked changesets are rejected entirely.
-9. **Git + PR** -- Creates a branch (`sentinel/<provider>-<timestamp>`), commits, pushes, and opens a pull request with a markdown summary of all changes.
+| Step | What happens |
+|---|---|
+| **Discover** | Provider adapters call source APIs, return `[]DiscoveredModel` matching the catalog YAML schema |
+| **Diff** | Compares discovered models against existing catalog. Produces changeset: new, updated, deprecation candidates, possible renames |
+| **Validate** | Schema rules: required fields, pricing bounds, limits ranges, filename-to-name consistency. Errors block the PR |
+| **Judge** | Optional. Sends changeset to an LLM to flag suspicious values. Non-fatal: failures log a warning and continue |
+| **Smart merge** | Writes YAML via `yaml.Node` trees. Overlays discovered fields, preserves hand-edited keys and field ordering |
+| **Version bump** | MINOR for new models, PATCH for updates only. Never auto-MAJOR |
+| **Manifest** | Regenerates `manifest.yaml` with provider list, file paths, aggregate stats |
+| **Risk gates** | >25 changes, >3 deprecation candidates, or price deltas >35%/2x trigger draft PRs |
+| **Git + PR** | Branch (`sentinel/<provider>-<timestamp>`), commit, push, open PR with markdown summary |
+
+---
 
 ## Commands
 
@@ -55,7 +92,14 @@ sentinel discover --provider=openai     # print discovered models to stdout
 sentinel validate --catalog-path=./cat  # validate catalog YAML (CI check)
 ```
 
-Exit codes: `0` success, `2` changes detected (diff mode), `3` blocked by policy, `4` source health failure.
+| Exit code | Meaning |
+|---|---|
+| `0` | Success / no changes |
+| `2` | Changes detected (diff mode) |
+| `3` | Blocked by policy |
+| `4` | Source health failure |
+
+---
 
 ## Configuration
 
@@ -88,11 +132,15 @@ judge:
   on_reject: "draft" # "draft" or "exclude"
 ```
 
-Environment variables override config values with the `SENTINEL_` prefix (e.g., `SENTINEL_CATALOG_PATH`). API keys are set via:
+All config keys can be overridden via environment variables with the `SENTINEL_` prefix (e.g., `SENTINEL_CATALOG_PATH`).
 
-- `GITHUB_TOKEN` -- PR creation and catalog repo access
-- `OPENAI_API_KEY` -- OpenAI model discovery
-- `ANTHROPIC_API_KEY` -- LLM-as-judge and Anthropic discovery
+| Variable | Purpose |
+|---|---|
+| `GITHUB_TOKEN` | PR creation and catalog repo access |
+| `OPENAI_API_KEY` | OpenAI model discovery |
+| `ANTHROPIC_API_KEY` | LLM-as-judge and Anthropic discovery |
+
+---
 
 ## Smart merge
 
@@ -100,16 +148,20 @@ The writer does not blindly overwrite model files. For existing models, it loads
 
 New models get a fresh file. In both cases, an `x_updater` block is appended with `last_verified_at` and `sources` metadata -- ignored by catalog consumers.
 
+---
+
 ## Risk gates
 
-| Condition                  | Action    |
-| -------------------------- | --------- |
-| >25 total changes          | Draft PR  |
-| >3 deprecation candidates  | Draft PR  |
-| Any price delta >35% or 2x | Draft PR  |
-| All clear                  | Normal PR |
+| Condition | Action |
+|---|---|
+| >25 total changes | Draft PR |
+| >3 deprecation candidates | Draft PR |
+| Any price delta >35% or 2x | Draft PR |
+| All clear | Normal PR |
 
 In `strict` mode (default), blocked changesets abort the PR for that provider. In `relaxed` mode, they proceed as normal PRs.
+
+---
 
 ## Project structure
 
@@ -130,6 +182,8 @@ internal/
 docs/updater/design.md            Design document
 ```
 
+---
+
 ## Adding a provider
 
 Create a package at `internal/adapter/providers/<name>/` that implements:
@@ -146,12 +200,16 @@ Call `adapter.Register()` in the package's `init()` function, then add the blank
 
 See `internal/adapter/providers/openai/` for a complete reference implementation.
 
+---
+
 ## CI/CD
 
-Two GitHub Actions workflows:
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | Push/PR to `main` | Build, test (`go test ./...`), lint (`golangci-lint`) |
+| `sync.yml` | Every 12h (6am/6pm UTC) + `workflow_dispatch` | Checkout sentinel + catalog repo, build, run `sentinel sync` |
 
-- **ci.yml** -- Runs on push/PR to `main`. Builds, tests (`go test ./...`), and lints (`golangci-lint`).
-- **sync.yml** -- Runs every 12 hours (6am and 6pm UTC). Checks out sentinel and the catalog repo, builds, and runs `sentinel sync`. Also supports `workflow_dispatch` for manual triggers with optional provider filtering and dry-run.
+---
 
 ## Development
 
@@ -167,6 +225,21 @@ make validate    # validate catalog
 
 Requires Go 1.23+.
 
+---
+
+## Tech Stack
+
+| Dependency | Purpose |
+|---|---|
+| Cobra + Viper | CLI framework + config |
+| go-git/v5 | Git operations (in-process) |
+| go-github/v60 | GitHub PR creation |
+| yaml.v3 | YAML read/write with node-level control |
+| x/time/rate | HTTP rate limiting |
+| x/oauth2 | GitHub token auth |
+
+---
+
 ## License
 
-See [LICENSE](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
