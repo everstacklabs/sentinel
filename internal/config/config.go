@@ -22,6 +22,7 @@ type Config struct {
 	OpenAI      OpenAIConfig     `mapstructure:"openai"`
 	Anthropic   AnthropicConfig  `mapstructure:"anthropic"`
 	Google      GoogleConfig     `mapstructure:"google"`
+	Mistral     MistralConfig    `mapstructure:"mistral"`
 	Judge       JudgeConfig      `mapstructure:"judge"`
 	LogLevel    string           `mapstructure:"log_level"`
 }
@@ -48,6 +49,12 @@ type AnthropicConfig struct {
 
 // GoogleConfig holds Google/Gemini-specific settings.
 type GoogleConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// MistralConfig holds Mistral-specific settings.
+type MistralConfig struct {
 	APIKey  string `mapstructure:"api_key"`
 	BaseURL string `mapstructure:"base_url"`
 }
@@ -79,6 +86,7 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("openai.base_url", "https://api.openai.com/v1")
 	v.SetDefault("anthropic.base_url", "https://api.anthropic.com/v1")
 	v.SetDefault("google.base_url", "https://generativelanguage.googleapis.com/v1beta")
+	v.SetDefault("mistral.base_url", "https://api.mistral.ai/v1")
 	v.SetDefault("judge.enabled", false)
 	v.SetDefault("judge.provider", "anthropic")
 	v.SetDefault("judge.model", "claude-sonnet-4-20250514")
@@ -106,6 +114,8 @@ func Load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("anthropic.base_url", "SENTINEL_ANTHROPIC_BASE_URL")
 	_ = v.BindEnv("google.api_key", "GEMINI_API_KEY")
 	_ = v.BindEnv("google.base_url", "SENTINEL_GOOGLE_BASE_URL")
+	_ = v.BindEnv("mistral.api_key", "MISTRAL_API_KEY")
+	_ = v.BindEnv("mistral.base_url", "SENTINEL_MISTRAL_BASE_URL")
 	_ = v.BindEnv("judge.enabled", "SENTINEL_JUDGE_ENABLED")
 	_ = v.BindEnv("judge.provider", "SENTINEL_JUDGE_PROVIDER")
 	_ = v.BindEnv("judge.model", "SENTINEL_JUDGE_MODEL")

@@ -52,6 +52,11 @@ google:
   # api_key: set via GEMINI_API_KEY env var
   base_url: "https://generativelanguage.googleapis.com/v1beta"
 
+# Mistral settings
+mistral:
+  # api_key: set via MISTRAL_API_KEY env var
+  base_url: "https://api.mistral.ai/v1"
+
 # LLM-as-Judge settings
 # Evaluates changesets before writing, catching wrong capabilities,
 # suspicious pricing, or nonsensical limits. Non-fatal — if the LLM

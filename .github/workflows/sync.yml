@@ -22,6 +22,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +36,7 @@ jobs:
       - name: Checkout model catalog
         uses: actions/checkout@v4
         with:
-          repository: everstacklabs/everstack
+          repository: midfusion/model-catalog
           token: ${{ secrets.GH_PAT }}
           path: model-catalog
 
@@ -45,8 +46,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SENTINEL_CATALOG_PATH: ./model-catalog
-          SENTINEL_GITHUB_OWNER: everstacklabs
-          SENTINEL_GITHUB_REPO: everstack
+          SENTINEL_GITHUB_OWNER: midfusion
+          SENTINEL_GITHUB_REPO: model-catalog
           SENTINEL_GITHUB_BASE_BRANCH: main
         run: |
           ARGS="sync"

@@ -12,6 +12,7 @@ import (
 	"github.com/everstacklabs/sentinel/internal/adapter"
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/anthropic" // register Anthropic adapter
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/google"    // register Google adapter
+	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/mistral"   // register Mistral adapter
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/openai"    // register OpenAI adapter
 	"github.com/everstacklabs/sentinel/internal/cache"
 	"github.com/everstacklabs/sentinel/internal/catalog"
@@ -23,6 +24,7 @@ import (
 
 	anthropicAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/anthropic"
 	googleAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/google"
+	mistralAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/mistral"
 	openaiAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/openai"
 )
 
@@ -274,6 +276,17 @@ func configureAdapters(cfg *config.Config) {
 				apiKey = os.Getenv("GEMINI_API_KEY")
 			}
 			ga.Configure(apiKey, cfg.Google.BaseURL, client)
+		}
+	}
+
+	// Configure Mistral adapter
+	if a, err := adapter.Get("mistral"); err == nil {
+		if ma, ok := a.(*mistralAdapter.Mistral); ok {
+			apiKey := cfg.Mistral.APIKey
+			if apiKey == "" {
+				apiKey = os.Getenv("MISTRAL_API_KEY")
+			}
+			ma.Configure(apiKey, cfg.Mistral.BaseURL, client)
 		}
 	}
 }
