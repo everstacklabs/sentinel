@@ -36,7 +36,7 @@ jobs:
       - name: Checkout model catalog
         uses: actions/checkout@v4
         with:
-          repository: midfusion/model-catalog
+          repository: midfusionlabs/model-catalog
           token: ${{ secrets.GH_PAT }}
           path: model-catalog
 
@@ -46,7 +46,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SENTINEL_CATALOG_PATH: ./model-catalog
-          SENTINEL_GITHUB_OWNER: midfusion
+          SENTINEL_GITHUB_OWNER: midfusionlabs
           SENTINEL_GITHUB_REPO: model-catalog
           SENTINEL_GITHUB_BASE_BRANCH: main
         run: |
