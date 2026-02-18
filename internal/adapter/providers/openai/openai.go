@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/everstacklabs/sentinel/internal/adapter"
 	"github.com/everstacklabs/sentinel/internal/httpclient"
@@ -25,7 +26,7 @@ type OpenAI struct {
 func (o *OpenAI) Name() string { return "openai" }
 
 func (o *OpenAI) SupportedSources() []adapter.SourceType {
-	return []adapter.SourceType{adapter.SourceAPI}
+	return []adapter.SourceType{adapter.SourceAPI, adapter.SourceDocs}
 }
 
 // Configure sets up the adapter with API credentials and HTTP client.
@@ -34,6 +35,21 @@ func (o *OpenAI) Configure(apiKey, baseURL string, client *httpclient.Client) {
 	o.baseURL = baseURL
 	o.client = client
 }
+
+// HealthCheck performs a lightweight GET to the models endpoint.
+func (o *OpenAI) HealthCheck(ctx context.Context) error {
+	url := o.baseURL + "/models"
+	headers := map[string]string{
+		"Authorization": "Bearer " + o.apiKey,
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	_, err := o.client.Get(ctx, url, headers)
+	return err
+}
+
+// MinExpectedModels returns the minimum model count for OpenAI.
+func (o *OpenAI) MinExpectedModels() int { return 8 }
 
 func (o *OpenAI) Discover(ctx context.Context, opts adapter.DiscoverOptions) ([]adapter.DiscoveredModel, error) {
 	var models []adapter.DiscoveredModel
@@ -47,7 +63,12 @@ func (o *OpenAI) Discover(ctx context.Context, opts adapter.DiscoverOptions) ([]
 			}
 			models = append(models, apiModels...)
 		case adapter.SourceDocs:
-			slog.Warn("openai docs source not implemented in Phase 1")
+			docModels, err := o.discoverFromDocs(ctx)
+			if err != nil {
+				slog.Warn("openai docs scraping failed, continuing with API data", "error", err)
+			} else {
+				models = append(models, docModels...)
+			}
 		}
 	}
 

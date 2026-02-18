@@ -24,6 +24,8 @@ type Config struct {
 	Google      GoogleConfig     `mapstructure:"google"`
 	Mistral     MistralConfig    `mapstructure:"mistral"`
 	Judge       JudgeConfig      `mapstructure:"judge"`
+	Diff        DiffConfig       `mapstructure:"diff"`
+	Health      HealthConfig     `mapstructure:"health"`
 	LogLevel    string           `mapstructure:"log_level"`
 }
 
@@ -68,6 +70,17 @@ type JudgeConfig struct {
 	MaxTokens int    `mapstructure:"max_tokens"`
 }
 
+// DiffConfig holds diff behavior settings.
+type DiffConfig struct {
+	TrackDisplayName bool `mapstructure:"track_display_name"`
+}
+
+// HealthConfig holds source health check settings.
+type HealthConfig struct {
+	Enabled   bool    `mapstructure:"enabled"`
+	Threshold float64 `mapstructure:"threshold"`
+}
+
 // Load reads configuration from file, environment, and defaults.
 func Load(cfgFile string) (*Config, error) {
 	v := viper.New()
@@ -87,6 +100,9 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("anthropic.base_url", "https://api.anthropic.com/v1")
 	v.SetDefault("google.base_url", "https://generativelanguage.googleapis.com/v1beta")
 	v.SetDefault("mistral.base_url", "https://api.mistral.ai/v1")
+	v.SetDefault("diff.track_display_name", false)
+	v.SetDefault("health.enabled", true)
+	v.SetDefault("health.threshold", 0.90)
 	v.SetDefault("judge.enabled", false)
 	v.SetDefault("judge.provider", "anthropic")
 	v.SetDefault("judge.model", "claude-sonnet-4-20250514")

@@ -21,7 +21,7 @@ func TestNewModelDetected(t *testing.T) {
 	}
 	existing := map[string]*catalog.Model{}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.New) != 1 {
 		t.Fatalf("expected 1 new model, got %d", len(cs.New))
@@ -58,7 +58,7 @@ func TestUpdatedModelDetected(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.New) != 0 {
 		t.Errorf("expected 0 new, got %d", len(cs.New))
@@ -106,13 +106,53 @@ func TestDisplayNameChangeIgnored(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.Updated) != 0 {
 		t.Errorf("expected 0 updates (display_name-only changes ignored), got %d", len(cs.Updated))
 	}
 	if cs.Unchanged != 1 {
 		t.Errorf("expected 1 unchanged, got %d", cs.Unchanged)
+	}
+}
+
+func TestDisplayNameChangeTracked(t *testing.T) {
+	discovered := []adapter.DiscoveredModel{
+		{
+			Name:         "gpt-4o",
+			DisplayName:  "GPT 4o Different",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       adapter.Limits{MaxTokens: 128000},
+			Modalities:   adapter.Modalities{Input: []string{"text"}, Output: []string{"text"}},
+		},
+	}
+	existing := map[string]*catalog.Model{
+		"gpt-4o": {
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4o",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       catalog.Limits{MaxTokens: 128000},
+			Modalities:   catalog.Modalities{Input: []string{"text"}, Output: []string{"text"}},
+		},
+	}
+
+	cs := Compute("openai", discovered, existing, DiffOptions{TrackDisplayName: true})
+
+	if len(cs.Updated) != 1 {
+		t.Fatalf("expected 1 update with TrackDisplayName, got %d", len(cs.Updated))
+	}
+	found := false
+	for _, c := range cs.Updated[0].Changes {
+		if c.Field == "display_name" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected display_name change when TrackDisplayName is true")
 	}
 }
 
@@ -140,7 +180,7 @@ func TestUnchangedModel(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.New) != 0 || len(cs.Updated) != 0 {
 		t.Errorf("expected no changes, got %d new, %d updated", len(cs.New), len(cs.Updated))
@@ -167,7 +207,7 @@ func TestDeprecationCandidate(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.DeprecationCandidates) != 1 {
 		t.Fatalf("expected 1 deprecation candidate, got %d", len(cs.DeprecationCandidates))
@@ -202,7 +242,7 @@ func TestRenameDetection(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.PossibleRenames) != 1 {
 		t.Fatalf("expected 1 rename, got %d", len(cs.PossibleRenames))
@@ -242,7 +282,7 @@ func TestRenameMiss_DifferentFamily(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.PossibleRenames) != 0 {
 		t.Errorf("expected 0 renames (different family), got %d", len(cs.PossibleRenames))
@@ -280,7 +320,7 @@ func TestDatedSnapshotNotDeprecated(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	// Only gpt-4o (non-dated) should be a deprecation candidate
 	if len(cs.DeprecationCandidates) != 1 {
@@ -330,7 +370,7 @@ func TestCostChangeDetection(t *testing.T) {
 		},
 	}
 
-	cs := Compute("openai", discovered, existing)
+	cs := Compute("openai", discovered, existing, DiffOptions{})
 
 	if len(cs.Updated) != 1 {
 		t.Fatalf("expected 1 updated, got %d", len(cs.Updated))
@@ -343,5 +383,122 @@ func TestCostChangeDetection(t *testing.T) {
 	}
 	if costFields != 2 {
 		t.Errorf("expected 2 cost field changes, got %d", costFields)
+	}
+}
+
+func TestZeroCostIgnored(t *testing.T) {
+	// Discovered model with zero cost should not overwrite existing cost data
+	discovered := []adapter.DiscoveredModel{
+		{
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4O",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       adapter.Limits{MaxTokens: 128000},
+			Modalities:   adapter.Modalities{Input: []string{"text"}, Output: []string{"text"}},
+			Cost:         &adapter.Cost{InputPer1K: 0, OutputPer1K: 0},
+		},
+	}
+	existing := map[string]*catalog.Model{
+		"gpt-4o": {
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4O",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       catalog.Limits{MaxTokens: 128000},
+			Modalities:   catalog.Modalities{Input: []string{"text"}, Output: []string{"text"}},
+			Cost:         &catalog.Cost{InputPer1K: 0.005, OutputPer1K: 0.015},
+		},
+	}
+
+	cs := Compute("openai", discovered, existing, DiffOptions{})
+
+	if len(cs.Updated) != 0 {
+		t.Errorf("expected 0 updates (zero-cost treated as missing data), got %d", len(cs.Updated))
+	}
+	if cs.Unchanged != 1 {
+		t.Errorf("expected 1 unchanged, got %d", cs.Unchanged)
+	}
+}
+
+func TestCapabilityRemovalDetected(t *testing.T) {
+	discovered := []adapter.DiscoveredModel{
+		{
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4O",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       adapter.Limits{MaxTokens: 128000},
+			Modalities:   adapter.Modalities{Input: []string{"text"}, Output: []string{"text"}},
+		},
+	}
+	existing := map[string]*catalog.Model{
+		"gpt-4o": {
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4O",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat", "vision"},
+			Limits:       catalog.Limits{MaxTokens: 128000},
+			Modalities:   catalog.Modalities{Input: []string{"text"}, Output: []string{"text"}},
+		},
+	}
+
+	cs := Compute("openai", discovered, existing, DiffOptions{})
+
+	if len(cs.Updated) != 1 {
+		t.Fatalf("expected 1 updated (capability removed), got %d", len(cs.Updated))
+	}
+	found := false
+	for _, c := range cs.Updated[0].Changes {
+		if c.Field == "capabilities" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected capabilities change for removal")
+	}
+}
+
+func TestModalityChangeDetected(t *testing.T) {
+	discovered := []adapter.DiscoveredModel{
+		{
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4O",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       adapter.Limits{MaxTokens: 128000},
+			Modalities:   adapter.Modalities{Input: []string{"text", "image", "audio"}, Output: []string{"text"}},
+		},
+	}
+	existing := map[string]*catalog.Model{
+		"gpt-4o": {
+			Name:         "gpt-4o",
+			DisplayName:  "GPT-4O",
+			Family:       "gpt-4",
+			Status:       "stable",
+			Capabilities: []string{"chat"},
+			Limits:       catalog.Limits{MaxTokens: 128000},
+			Modalities:   catalog.Modalities{Input: []string{"text", "image"}, Output: []string{"text"}},
+		},
+	}
+
+	cs := Compute("openai", discovered, existing, DiffOptions{})
+
+	if len(cs.Updated) != 1 {
+		t.Fatalf("expected 1 updated (modality change), got %d", len(cs.Updated))
+	}
+	found := false
+	for _, c := range cs.Updated[0].Changes {
+		if c.Field == "modalities.input" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected modalities.input change")
 	}
 }

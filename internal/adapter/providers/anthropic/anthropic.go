@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/everstacklabs/sentinel/internal/adapter"
 	"github.com/everstacklabs/sentinel/internal/httpclient"
@@ -26,7 +27,7 @@ type Anthropic struct {
 func (a *Anthropic) Name() string { return "anthropic" }
 
 func (a *Anthropic) SupportedSources() []adapter.SourceType {
-	return []adapter.SourceType{adapter.SourceAPI}
+	return []adapter.SourceType{adapter.SourceAPI, adapter.SourceDocs}
 }
 
 // Configure sets up the adapter with API credentials and HTTP client.
@@ -35,6 +36,22 @@ func (a *Anthropic) Configure(apiKey, baseURL string, client *httpclient.Client)
 	a.baseURL = baseURL
 	a.client = client
 }
+
+// HealthCheck performs a lightweight GET to the models endpoint.
+func (a *Anthropic) HealthCheck(ctx context.Context) error {
+	url := a.baseURL + "/models?limit=1"
+	headers := map[string]string{
+		"x-api-key":         a.apiKey,
+		"anthropic-version": "2023-06-01",
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	_, err := a.client.Get(ctx, url, headers)
+	return err
+}
+
+// MinExpectedModels returns the minimum model count for Anthropic.
+func (a *Anthropic) MinExpectedModels() int { return 4 }
 
 func (a *Anthropic) Discover(ctx context.Context, opts adapter.DiscoverOptions) ([]adapter.DiscoveredModel, error) {
 	var models []adapter.DiscoveredModel
@@ -48,7 +65,12 @@ func (a *Anthropic) Discover(ctx context.Context, opts adapter.DiscoverOptions) 
 			}
 			models = append(models, apiModels...)
 		case adapter.SourceDocs:
-			slog.Warn("anthropic docs source not implemented in Phase 1")
+			docModels, err := a.discoverFromDocs(ctx)
+			if err != nil {
+				slog.Warn("anthropic docs scraping failed, continuing with API data", "error", err)
+			} else {
+				models = append(models, docModels...)
+			}
 		}
 	}
 

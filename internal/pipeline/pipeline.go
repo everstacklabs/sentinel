@@ -204,6 +204,11 @@ func (p *Pipeline) discoverAndDiff(ctx context.Context, providerName string) (*d
 		return nil, err
 	}
 
+	// Pre-discovery health check.
+	if err := p.checkSourceHealth(ctx, a, providerName); err != nil {
+		return nil, err
+	}
+
 	sources := make([]adapter.SourceType, 0, len(p.cfg.Sources))
 	for _, s := range p.cfg.Sources {
 		sources = append(sources, adapter.SourceType(s))
@@ -218,7 +223,13 @@ func (p *Pipeline) discoverAndDiff(ctx context.Context, providerName string) (*d
 		return nil, fmt.Errorf("discovering models: %w", err)
 	}
 
+	discovered = deduplicateDiscovered(discovered)
 	slog.Info("discovery complete", "provider", providerName, "models", len(discovered))
+
+	// Post-discovery model count threshold check.
+	if err := p.checkModelCountThreshold(a, discovered, providerName); err != nil {
+		return nil, err
+	}
 
 	// Get existing models for this provider
 	existing := make(map[string]*catalog.Model)
@@ -226,7 +237,10 @@ func (p *Pipeline) discoverAndDiff(ctx context.Context, providerName string) (*d
 		existing = pc.Models
 	}
 
-	cs := diff.Compute(providerName, discovered, existing)
+	opts := diff.DiffOptions{
+		TrackDisplayName: p.cfg.Diff.TrackDisplayName,
+	}
+	cs := diff.Compute(providerName, discovered, existing, opts)
 	return cs, nil
 }
 
@@ -344,6 +358,90 @@ func (p *Pipeline) runJudge(ctx context.Context, cs *diff.ChangeSet) (*judge.Res
 
 	j := judge.New(client, p.cfg.Judge.Model, false)
 	return j.Evaluate(ctx, cs)
+}
+
+// deduplicateDiscovered merges models discovered from multiple sources.
+// API entries take priority; docs-sourced cost data fills gaps for API models missing cost.
+func deduplicateDiscovered(models []adapter.DiscoveredModel) []adapter.DiscoveredModel {
+	byName := make(map[string]*adapter.DiscoveredModel, len(models))
+	var order []string
+
+	for i := range models {
+		m := &models[i]
+		existing, ok := byName[m.Name]
+		if !ok {
+			byName[m.Name] = m
+			order = append(order, m.Name)
+			continue
+		}
+
+		// API source takes priority over docs.
+		if existing.DiscoveredBy == adapter.SourceAPI && m.DiscoveredBy != adapter.SourceAPI {
+			// Fill in cost data from docs if API model has none.
+			if existing.Cost == nil && m.Cost != nil {
+				existing.Cost = m.Cost
+			}
+		} else if m.DiscoveredBy == adapter.SourceAPI && existing.DiscoveredBy != adapter.SourceAPI {
+			// Replace docs entry with API entry, preserving docs cost if needed.
+			docsCost := existing.Cost
+			byName[m.Name] = m
+			if m.Cost == nil && docsCost != nil {
+				m.Cost = docsCost
+			}
+		}
+		// If both are from the same source, keep the first one.
+	}
+
+	result := make([]adapter.DiscoveredModel, 0, len(byName))
+	for _, name := range order {
+		result = append(result, *byName[name])
+	}
+	return result
+}
+
+// SourceHealthError indicates a source health check failure (exit code 4).
+type SourceHealthError struct {
+	Provider string
+	Reason   string
+}
+
+func (e *SourceHealthError) Error() string {
+	return fmt.Sprintf("source health check failed for %s: %s", e.Provider, e.Reason)
+}
+
+// checkSourceHealth performs a pre-discovery liveness probe.
+func (p *Pipeline) checkSourceHealth(ctx context.Context, a adapter.Adapter, providerName string) error {
+	hc, ok := a.(adapter.HealthChecker)
+	if !ok || !p.cfg.Health.Enabled {
+		return nil
+	}
+	slog.Info("running health check", "provider", providerName)
+	if err := hc.HealthCheck(ctx); err != nil {
+		return &SourceHealthError{Provider: providerName, Reason: fmt.Sprintf("liveness probe failed: %v", err)}
+	}
+	slog.Info("health check passed", "provider", providerName)
+	return nil
+}
+
+// checkModelCountThreshold validates that the discovery returned a reasonable number of models.
+func (p *Pipeline) checkModelCountThreshold(a adapter.Adapter, discovered []adapter.DiscoveredModel, providerName string) error {
+	hc, ok := a.(adapter.HealthChecker)
+	if !ok || !p.cfg.Health.Enabled {
+		return nil
+	}
+	min := hc.MinExpectedModels()
+	if min == 0 {
+		return nil
+	}
+	threshold := p.cfg.Health.Threshold
+	requiredMin := int(float64(min) * threshold)
+	if len(discovered) < requiredMin {
+		return &SourceHealthError{
+			Provider: providerName,
+			Reason:   fmt.Sprintf("discovered %d models, below threshold %d (min=%d × %.0f%%)", len(discovered), requiredMin, min, threshold*100),
+		}
+	}
+	return nil
 }
 
 // assessRisk evaluates the changeset against risk gates.

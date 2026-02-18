@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/everstacklabs/sentinel/internal/adapter"
 	"github.com/everstacklabs/sentinel/internal/httpclient"
@@ -35,6 +36,18 @@ func (g *Google) Configure(apiKey, baseURL string, client *httpclient.Client) {
 	g.baseURL = baseURL
 	g.client = client
 }
+
+// HealthCheck performs a lightweight GET to the models endpoint.
+func (g *Google) HealthCheck(ctx context.Context) error {
+	url := g.baseURL + "/models?pageSize=1&key=" + g.apiKey
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	_, err := g.client.Get(ctx, url, nil)
+	return err
+}
+
+// MinExpectedModels returns the minimum model count for Google.
+func (g *Google) MinExpectedModels() int { return 5 }
 
 func (g *Google) Discover(ctx context.Context, opts adapter.DiscoverOptions) ([]adapter.DiscoveredModel, error) {
 	var models []adapter.DiscoveredModel

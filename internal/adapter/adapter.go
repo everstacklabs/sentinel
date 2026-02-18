@@ -28,6 +28,16 @@ type Adapter interface {
 	SupportedSources() []SourceType
 }
 
+// HealthChecker is an optional interface adapters can implement for pre-discovery
+// liveness probes and post-discovery model count validation.
+type HealthChecker interface {
+	// HealthCheck performs a lightweight liveness probe against the provider.
+	HealthCheck(ctx context.Context) error
+	// MinExpectedModels returns the minimum number of models expected from this provider.
+	// A discovery result below this threshold signals a data quality issue.
+	MinExpectedModels() int
+}
+
 // DiscoveredModel matches the existing catalog YAML schema.
 type DiscoveredModel struct {
 	Name         string     `yaml:"name"`
