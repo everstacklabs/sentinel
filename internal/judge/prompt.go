@@ -38,7 +38,7 @@ Respond ONLY with the JSON object, no other text.`
 func buildUserPrompt(cs *diff.ChangeSet) string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("Provider: %s\n\n", cs.Provider))
+	fmt.Fprintf(&b, "Provider: %s\n\n", cs.Provider)
 
 	if len(cs.New) > 0 {
 		b.WriteString("## New Models\n\n")
@@ -64,7 +64,7 @@ func buildUserPrompt(cs *diff.ChangeSet) string {
 				}
 			}
 			jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-			b.WriteString(fmt.Sprintf("```json\n%s\n```\n\n", string(jsonBytes)))
+			fmt.Fprintf(&b, "```json\n%s\n```\n\n", string(jsonBytes))
 		}
 	}
 
@@ -103,7 +103,7 @@ func buildUserPrompt(cs *diff.ChangeSet) string {
 				}
 			}
 			jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-			b.WriteString(fmt.Sprintf("```json\n%s\n```\n\n", string(jsonBytes)))
+			fmt.Fprintf(&b, "```json\n%s\n```\n\n", string(jsonBytes))
 		}
 	}
 
