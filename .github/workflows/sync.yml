@@ -61,3 +61,36 @@ jobs:
           fi
 
           ./bin/sentinel $ARGS
+
+      - name: Notify Discord
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "DISCORD_WEBHOOK not set, skipping notification"
+            exit 0
+          fi
+
+          if [ "${{ job.status }}" = "success" ]; then
+            COLOR=3066993
+            TITLE="Sentinel sync completed"
+            DESC="Model catalog sync finished successfully."
+          elif [ "${{ job.status }}" = "cancelled" ]; then
+            COLOR=15105570
+            TITLE="Sentinel sync cancelled"
+            DESC="Model catalog sync was cancelled."
+          else
+            COLOR=15158332
+            TITLE="Sentinel sync failed"
+            DESC="Model catalog sync encountered an error. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          fi
+
+          curl -s -H "Content-Type: application/json" -d "{
+            \"embeds\": [{
+              \"title\": \"$TITLE\",
+              \"description\": \"$DESC\",
+              \"color\": $COLOR,
+              \"footer\": {\"text\": \"${{ github.repository }} • Run #${{ github.run_number }}\"}
+            }]
+          }" "$DISCORD_WEBHOOK"
