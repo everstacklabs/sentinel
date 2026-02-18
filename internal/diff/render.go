@@ -9,9 +9,9 @@ import (
 func RenderPRBody(cs *ChangeSet) string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("## Model Catalog Update: %s\n\n", cs.Provider))
-	b.WriteString(fmt.Sprintf("**Summary**: %d new, %d updated, %d unchanged, %d deprecation candidates\n\n",
-		len(cs.New), len(cs.Updated), cs.Unchanged, len(cs.DeprecationCandidates)))
+	fmt.Fprintf(&b, "## Model Catalog Update: %s\n\n", cs.Provider)
+	fmt.Fprintf(&b, "**Summary**: %d new, %d updated, %d unchanged, %d deprecation candidates\n\n",
+		len(cs.New), len(cs.Updated), cs.Unchanged, len(cs.DeprecationCandidates))
 
 	// New models table
 	if len(cs.New) > 0 {
@@ -19,8 +19,8 @@ func RenderPRBody(cs *ChangeSet) string {
 		b.WriteString("| Model | Family | Status | Context Window |\n")
 		b.WriteString("|-------|--------|--------|----------------|\n")
 		for _, m := range cs.New {
-			b.WriteString(fmt.Sprintf("| `%s` | %s | %s | %d |\n",
-				m.Name, m.Model.Family, m.Model.Status, m.Model.Limits.MaxTokens))
+			fmt.Fprintf(&b, "| `%s` | %s | %s | %d |\n",
+				m.Name, m.Model.Family, m.Model.Status, m.Model.Limits.MaxTokens)
 		}
 		b.WriteString("\n")
 	}
@@ -37,8 +37,8 @@ func RenderPRBody(cs *ChangeSet) string {
 				fields = append(fields, c.Field)
 				details = append(details, fmt.Sprintf("%s: %v → %v", c.Field, c.OldValue, c.NewValue))
 			}
-			b.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n",
-				u.Name, strings.Join(fields, ", "), strings.Join(details, "; ")))
+			fmt.Fprintf(&b, "| `%s` | %s | %s |\n",
+				u.Name, strings.Join(fields, ", "), strings.Join(details, "; "))
 		}
 		b.WriteString("\n")
 	}
@@ -49,7 +49,7 @@ func RenderPRBody(cs *ChangeSet) string {
 		b.WriteString("These models exist in the catalog but were not found by the provider API. ")
 		b.WriteString("They may have been renamed, deprecated, or temporarily unavailable.\n\n")
 		for _, m := range cs.DeprecationCandidates {
-			b.WriteString(fmt.Sprintf("- `%s` (%s)\n", m.Name, m.Model.Family))
+			fmt.Fprintf(&b, "- `%s` (%s)\n", m.Name, m.Model.Family)
 		}
 		b.WriteString("\n")
 	}
@@ -60,7 +60,7 @@ func RenderPRBody(cs *ChangeSet) string {
 		b.WriteString("| Old Name | New Name | Reason |\n")
 		b.WriteString("|----------|----------|--------|\n")
 		for _, r := range cs.PossibleRenames {
-			b.WriteString(fmt.Sprintf("| `%s` | `%s` | %s |\n", r.OldName, r.NewName, r.Reason))
+			fmt.Fprintf(&b, "| `%s` | `%s` | %s |\n", r.OldName, r.NewName, r.Reason)
 		}
 		b.WriteString("\n")
 	}
@@ -75,17 +75,17 @@ func RenderPRBody(cs *ChangeSet) string {
 func RenderDiffSummary(cs *ChangeSet) string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("Provider: %s\n", cs.Provider))
-	b.WriteString(fmt.Sprintf("  New:         %d\n", len(cs.New)))
-	b.WriteString(fmt.Sprintf("  Updated:     %d\n", len(cs.Updated)))
-	b.WriteString(fmt.Sprintf("  Unchanged:   %d\n", cs.Unchanged))
-	b.WriteString(fmt.Sprintf("  Deprecation: %d\n", len(cs.DeprecationCandidates)))
-	b.WriteString(fmt.Sprintf("  Renames:     %d\n", len(cs.PossibleRenames)))
+	fmt.Fprintf(&b, "Provider: %s\n", cs.Provider)
+	fmt.Fprintf(&b, "  New:         %d\n", len(cs.New))
+	fmt.Fprintf(&b, "  Updated:     %d\n", len(cs.Updated))
+	fmt.Fprintf(&b, "  Unchanged:   %d\n", cs.Unchanged)
+	fmt.Fprintf(&b, "  Deprecation: %d\n", len(cs.DeprecationCandidates))
+	fmt.Fprintf(&b, "  Renames:     %d\n", len(cs.PossibleRenames))
 
 	if len(cs.New) > 0 {
 		b.WriteString("\n  New models:\n")
 		for _, m := range cs.New {
-			b.WriteString(fmt.Sprintf("    + %s\n", m.Name))
+			fmt.Fprintf(&b, "    + %s\n", m.Name)
 		}
 	}
 
@@ -96,14 +96,14 @@ func RenderDiffSummary(cs *ChangeSet) string {
 			for _, c := range u.Changes {
 				fields = append(fields, c.Field)
 			}
-			b.WriteString(fmt.Sprintf("    ~ %s [%s]\n", u.Name, strings.Join(fields, ", ")))
+			fmt.Fprintf(&b, "    ~ %s [%s]\n", u.Name, strings.Join(fields, ", "))
 		}
 	}
 
 	if len(cs.DeprecationCandidates) > 0 {
 		b.WriteString("\n  Deprecation candidates:\n")
 		for _, m := range cs.DeprecationCandidates {
-			b.WriteString(fmt.Sprintf("    - %s\n", m.Name))
+			fmt.Fprintf(&b, "    - %s\n", m.Name)
 		}
 	}
 

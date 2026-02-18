@@ -1,5 +1,5 @@
-# Model Updater Configuration
-# Copy to config.yaml and customize for your environment.
+# Sentinel Configuration
+# Used as the default config. Override with --config or environment variables.
 
 # Path to the model-catalog directory (relative or absolute)
 catalog_path: "../model-catalog"
@@ -8,13 +8,19 @@ catalog_path: "../model-catalog"
 cache_dir: "~/.cache/sentinel"
 cache_ttl: "1h"
 
-# Providers to sync (default: all registered)
+# Providers to sync
 providers:
   - openai
+  - anthropic
+  - google
+  - mistral
+  - perplexity   # docs-only, no API key needed
+  - ai21         # docs-only, no API key needed
 
 # Source types to use for discovery
 sources:
   - api
+  - docs
 
 # Dry run mode: show changes without writing
 dry_run: false
@@ -23,8 +29,6 @@ dry_run: false
 no_cache: false
 
 # Risk mode: "strict" (default) or "relaxed"
-# strict: enforces all risk gates
-# relaxed: creates normal PRs even when risk thresholds are exceeded
 risk_mode: "strict"
 
 # Log level: debug, info, warn, error
@@ -33,9 +37,18 @@ log_level: "info"
 # GitHub settings (for PR creation)
 github:
   # token: set via GITHUB_TOKEN env var
-  owner: "everstacklabs"
-  repo: "everstack"
+  owner: "midfusionlabs"
+  repo: "model-catalog"
   base_branch: "main"
+
+# Diff settings
+diff:
+  track_display_name: false
+
+# Health check settings
+health:
+  enabled: true
+  threshold: 0.90
 
 # OpenAI settings
 openai:
@@ -58,21 +71,9 @@ mistral:
   base_url: "https://api.mistral.ai/v1"
 
 # LLM-as-Judge settings
-# Evaluates changesets before writing, catching wrong capabilities,
-# suspicious pricing, or nonsensical limits. Non-fatal — if the LLM
-# call fails, the pipeline logs a warning and continues.
-#
-# Env var overrides:
-#   SENTINEL_JUDGE_ENABLED    (default: false)
-#   SENTINEL_JUDGE_PROVIDER   (default: anthropic)
-#   SENTINEL_JUDGE_MODEL      (default: claude-sonnet-4-20250514)
-#   SENTINEL_JUDGE_ON_REJECT  (default: draft)
-#   SENTINEL_JUDGE_MAX_TOKENS (default: 4096)
-#   ANTHROPIC_API_KEY
-#   SENTINEL_ANTHROPIC_BASE_URL
 judge:
   enabled: false
-  provider: "anthropic"              # "anthropic" or "openai"
+  provider: "anthropic"
   model: "claude-sonnet-4-20250514"
-  on_reject: "draft"                 # "draft" = mark PR as draft | "exclude" = remove rejected models
+  on_reject: "draft"
   max_tokens: 4096

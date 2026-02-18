@@ -43,7 +43,7 @@ func (c *FileCache) Get(key string) (*Entry, bool) {
 
 	var entry Entry
 	if err := json.Unmarshal(data, &entry); err != nil {
-		os.Remove(path)
+		_ = os.Remove(path)
 		return nil, false
 	}
 

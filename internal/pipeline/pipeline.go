@@ -447,12 +447,8 @@ func (p *Pipeline) checkModelCountThreshold(a adapter.Adapter, discovered []adap
 // assessRisk evaluates the changeset against risk gates.
 // Returns: (draft, blocked, reason)
 func assessRisk(cs *diff.ChangeSet) (bool, bool, string) {
-	draft := false
-
 	// Changed models > 25 → draft PR
-	if cs.TotalChanged() > 25 {
-		draft = true
-	}
+	draft := cs.TotalChanged() > 25
 
 	// Deprecation candidates > 3 → draft PR
 	if len(cs.DeprecationCandidates) > 3 {

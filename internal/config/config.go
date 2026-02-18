@@ -10,23 +10,23 @@ import (
 
 // Config holds all configuration for the sentinel.
 type Config struct {
-	CatalogPath string           `mapstructure:"catalog_path"`
-	CacheDir    string           `mapstructure:"cache_dir"`
-	CacheTTL    string           `mapstructure:"cache_ttl"`
-	Providers   []string         `mapstructure:"providers"`
-	Sources     []string         `mapstructure:"sources"`
-	DryRun      bool             `mapstructure:"dry_run"`
-	NoCache     bool             `mapstructure:"no_cache"`
-	RiskMode    string           `mapstructure:"risk_mode"`
-	GitHub      GitHubConfig     `mapstructure:"github"`
-	OpenAI      OpenAIConfig     `mapstructure:"openai"`
-	Anthropic   AnthropicConfig  `mapstructure:"anthropic"`
-	Google      GoogleConfig     `mapstructure:"google"`
-	Mistral     MistralConfig    `mapstructure:"mistral"`
-	Judge       JudgeConfig      `mapstructure:"judge"`
-	Diff        DiffConfig       `mapstructure:"diff"`
-	Health      HealthConfig     `mapstructure:"health"`
-	LogLevel    string           `mapstructure:"log_level"`
+	CatalogPath string          `mapstructure:"catalog_path"`
+	CacheDir    string          `mapstructure:"cache_dir"`
+	CacheTTL    string          `mapstructure:"cache_ttl"`
+	Providers   []string        `mapstructure:"providers"`
+	Sources     []string        `mapstructure:"sources"`
+	DryRun      bool            `mapstructure:"dry_run"`
+	NoCache     bool            `mapstructure:"no_cache"`
+	RiskMode    string          `mapstructure:"risk_mode"`
+	GitHub      GitHubConfig    `mapstructure:"github"`
+	OpenAI      OpenAIConfig    `mapstructure:"openai"`
+	Anthropic   AnthropicConfig `mapstructure:"anthropic"`
+	Google      GoogleConfig    `mapstructure:"google"`
+	Mistral     MistralConfig   `mapstructure:"mistral"`
+	Judge       JudgeConfig     `mapstructure:"judge"`
+	Diff        DiffConfig      `mapstructure:"diff"`
+	Health      HealthConfig    `mapstructure:"health"`
+	LogLevel    string          `mapstructure:"log_level"`
 }
 
 // GitHubConfig holds GitHub-related settings.
@@ -90,7 +90,7 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("cache_dir", defaultCacheDir())
 	v.SetDefault("cache_ttl", "1h")
 	v.SetDefault("providers", []string{"openai"})
-	v.SetDefault("sources", []string{"api"})
+	v.SetDefault("sources", []string{"api", "docs"})
 	v.SetDefault("dry_run", false)
 	v.SetDefault("no_cache", false)
 	v.SetDefault("risk_mode", "strict")

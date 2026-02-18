@@ -201,7 +201,7 @@ func (c *Client) doRequest(ctx context.Context, rawURL string, headers map[strin
 	if err != nil {
 		return nil, fmt.Errorf("HTTP GET %s: %w", rawURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Not modified — refresh cache TTL.
 	if resp.StatusCode == http.StatusNotModified && staleEntry != nil {

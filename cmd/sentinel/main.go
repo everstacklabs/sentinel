@@ -10,10 +10,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/everstacklabs/sentinel/internal/adapter"
+	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/ai21"      // register AI21 adapter
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/anthropic" // register Anthropic adapter
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/google"    // register Google adapter
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/mistral"   // register Mistral adapter
 	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/openai"    // register OpenAI adapter
+	_ "github.com/everstacklabs/sentinel/internal/adapter/providers/perplexity" // register Perplexity adapter
 	"github.com/everstacklabs/sentinel/internal/cache"
 	"github.com/everstacklabs/sentinel/internal/catalog"
 	"github.com/everstacklabs/sentinel/internal/config"
@@ -22,10 +24,12 @@ import (
 	"github.com/everstacklabs/sentinel/internal/pipeline"
 	"github.com/everstacklabs/sentinel/internal/validate"
 
+	ai21Adapter "github.com/everstacklabs/sentinel/internal/adapter/providers/ai21"
 	anthropicAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/anthropic"
 	googleAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/google"
 	mistralAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/mistral"
 	openaiAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/openai"
+	perplexityAdapter "github.com/everstacklabs/sentinel/internal/adapter/providers/perplexity"
 )
 
 var cfgFile string
@@ -287,6 +291,18 @@ func configureAdapters(cfg *config.Config) {
 				apiKey = os.Getenv("MISTRAL_API_KEY")
 			}
 			ma.Configure(apiKey, cfg.Mistral.BaseURL, client)
+		}
+	}
+
+	// Configure docs-only adapters (no API key needed)
+	if a, err := adapter.Get("perplexity"); err == nil {
+		if pa, ok := a.(*perplexityAdapter.Perplexity); ok {
+			pa.Configure(client)
+		}
+	}
+	if a, err := adapter.Get("ai21"); err == nil {
+		if aa, ok := a.(*ai21Adapter.AI21); ok {
+			aa.Configure(client)
 		}
 	}
 }

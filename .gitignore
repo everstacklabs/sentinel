@@ -4,3 +4,4 @@
 .env.test
 .DS_Store
 updater
+bin/
