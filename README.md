@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/static/v1?label=License&message=MIT&color=000" />
   </a>
   <a href="https://github.com/everstacklabs/sentinel">
-    <img src="https://img.shields.io/static/v1?label=Core&message=Go%201.23&color=00ADD8" />
+    <img src="https://img.shields.io/static/v1?label=Core&message=Go%201.26&color=00ADD8" />
   </a>
 </p>
 
@@ -23,6 +23,7 @@
   <a href="#how-it-works">How It Works</a> &middot;
   <a href="#commands">Commands</a> &middot;
   <a href="#configuration">Configuration</a> &middot;
+  <a href="docs/guide.md">Guide</a> &middot;
   <a href="#adding-a-provider">Adding a Provider</a> &middot;
   <a href="#development">Development</a>
 </p>
@@ -223,7 +224,7 @@ make sync        # dry-run sync
 make validate    # validate catalog
 ```
 
-Requires Go 1.23+.
+Requires Go 1.26+.
 
 ---
 

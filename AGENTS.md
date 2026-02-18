@@ -8,7 +8,7 @@ The pipeline: **discover → diff → validate → judge (optional) → write �
 
 ## Tech Stack
 
-- **Language:** Go 1.23
+- **Language:** Go 1.26
 - **CLI framework:** Cobra + Viper
 - **Git operations:** go-git/v5 (in-process, no shell-out)
 - **GitHub API:** google/go-github/v60 + oauth2
@@ -108,7 +108,7 @@ All config keys can be overridden via env vars with `SENTINEL_` prefix (e.g., `S
 
 ## CI/CD
 
-- **ci.yml:** Runs on push/PR to `main`. Three parallel jobs: build, test, lint (Go 1.23).
+- **ci.yml:** Runs on push/PR to `main`. Three parallel jobs: build, test, lint (Go 1.26).
 - **sync.yml:** Scheduled cron at 6am and 6pm UTC. Checks out both sentinel and the catalog repo, builds, and runs sync. Also supports `workflow_dispatch` with `providers` and `dry_run` inputs.
 
 ## Adding a New Provider
