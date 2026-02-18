@@ -32,7 +32,7 @@
 
 ## The Problem
 
-Maintaining 75+ AI models across multiple providers by hand does not scale. Pricing changes, new models appear, context windows get updated, capabilities shift -- and nobody notices until something breaks. No existing tool combines scheduled multi-provider discovery with metadata-rich catalog updates (pricing, context windows, capabilities) and risk-gated pull requests.
+Maintaining 1000+ AI models across multiple providers by hand does not scale. Pricing changes, new models appear, context windows get updated, capabilities shift -- and nobody notices until something breaks. No existing tool combines scheduled multi-provider discovery with metadata-rich catalog updates (pricing, context windows, capabilities) and risk-gated pull requests.
 
 Sentinel automates the entire loop: discover what changed, diff it against the catalog, validate the data, and open a PR for human review.
 
