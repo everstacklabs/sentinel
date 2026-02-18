@@ -24,7 +24,7 @@ func Fetch(ctx context.Context, url string) (*goquery.Document, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetching %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetching %s: status %d", url, resp.StatusCode)

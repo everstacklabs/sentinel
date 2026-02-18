@@ -234,16 +234,16 @@ func FormatResult(r *Result) string {
 	warnings := r.Warnings()
 
 	if len(errors) > 0 {
-		b.WriteString(fmt.Sprintf("Errors (%d):\n", len(errors)))
+		fmt.Fprintf(&b, "Errors (%d):\n", len(errors))
 		for _, e := range errors {
-			b.WriteString(fmt.Sprintf("  %s\n", e))
+			fmt.Fprintf(&b, "  %s\n", e)
 		}
 	}
 
 	if len(warnings) > 0 {
-		b.WriteString(fmt.Sprintf("Warnings (%d):\n", len(warnings)))
+		fmt.Fprintf(&b, "Warnings (%d):\n", len(warnings))
 		for _, w := range warnings {
-			b.WriteString(fmt.Sprintf("  %s\n", w))
+			fmt.Fprintf(&b, "  %s\n", w)
 		}
 	}
 
