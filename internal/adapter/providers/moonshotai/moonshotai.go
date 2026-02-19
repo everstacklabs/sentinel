@@ -127,11 +127,7 @@ func apiModelToDiscovered(am apiModel) *adapter.DiscoveredModel {
 }
 
 func shouldSkip(id string) bool {
-	lower := strings.ToLower(id)
-	if strings.Contains(lower, "embed") {
-		return true
-	}
-	return false
+	return strings.Contains(strings.ToLower(id), "embed")
 }
 
 func inferFamily(id string) string {
