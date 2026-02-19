@@ -26,7 +26,7 @@ type Mistral struct {
 func (m *Mistral) Name() string { return "mistral" }
 
 func (m *Mistral) SupportedSources() []adapter.SourceType {
-	return []adapter.SourceType{adapter.SourceAPI}
+	return []adapter.SourceType{adapter.SourceAPI, adapter.SourceDocs}
 }
 
 // Configure sets up the adapter with API credentials and HTTP client.
@@ -63,7 +63,12 @@ func (m *Mistral) Discover(ctx context.Context, opts adapter.DiscoverOptions) ([
 			}
 			models = append(models, apiModels...)
 		case adapter.SourceDocs:
-			slog.Warn("mistral docs source not implemented in Phase 1")
+			docModels, err := m.discoverFromDocs(ctx)
+			if err != nil {
+				slog.Warn("mistral docs discovery failed, continuing", "error", err)
+			} else {
+				models = append(models, docModels...)
+			}
 		}
 	}
 

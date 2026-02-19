@@ -5,9 +5,9 @@
 <h1 align="center">Sentinel</h1>
 
 <p align="center">
-  <strong>Automated model catalog maintenance for AI providers.</strong><br/>
-  Discovers models, diffs metadata, validates changes, opens pull requests.<br/>
-  Runs on a 12-hour cron. No manual intervention required.
+  <strong>Keeps your AI model catalog in sync with reality.</strong><br/>
+  An open-source tool that discovers AI models from provider APIs<br/>
+  and opens PRs to keep your catalog up to date.
 </p>
 
 <p align="center">

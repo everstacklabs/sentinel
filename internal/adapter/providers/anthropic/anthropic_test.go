@@ -64,10 +64,12 @@ func TestInferCapabilities(t *testing.T) {
 		id       string
 		wantCaps []string
 	}{
+		{"claude-opus-4-6", []string{"chat", "function_calling", "vision", "streaming", "extended_thinking", "adaptive_thinking"}},
+		{"claude-sonnet-4-6", []string{"chat", "function_calling", "vision", "streaming", "extended_thinking", "adaptive_thinking"}},
 		{"claude-opus-4-0", []string{"chat", "function_calling", "vision", "streaming", "extended_thinking"}},
 		{"claude-sonnet-4-0", []string{"chat", "function_calling", "vision", "streaming", "extended_thinking"}},
-		{"claude-haiku-4-0", []string{"chat", "function_calling", "vision", "streaming"}},
-		{"claude-3-5-haiku-latest", []string{"chat", "function_calling", "vision", "streaming"}},
+		{"claude-haiku-4-0", []string{"chat", "function_calling", "vision", "streaming", "extended_thinking"}},
+		{"claude-3-5-haiku-latest", []string{"chat", "function_calling", "vision", "streaming", "extended_thinking"}},
 	}
 
 	for _, tt := range tests {
@@ -104,8 +106,11 @@ func TestInferLimits(t *testing.T) {
 		wantMax         int
 		wantCompletions int
 	}{
-		{"claude-opus-4-0", "claude-opus", 200000, 8192},
-		{"claude-sonnet-4-0", "claude-sonnet", 200000, 8192},
+		{"claude-opus-4-6", "claude-opus", 200000, 128000},
+		{"claude-sonnet-4-6", "claude-sonnet", 200000, 64000},
+		{"claude-opus-4-0", "claude-opus", 200000, 32000},
+		{"claude-sonnet-4-0", "claude-sonnet", 200000, 64000},
+		{"claude-haiku-4-5", "claude-haiku", 200000, 64000},
 		{"claude-haiku-4-0", "claude-haiku", 200000, 4096},
 		{"claude-3-5-sonnet-latest", "claude-sonnet", 200000, 8192},
 		{"claude-3-5-haiku-latest", "claude-haiku", 200000, 4096},

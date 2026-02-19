@@ -23,7 +23,31 @@ type Config struct {
 	Anthropic   AnthropicConfig `mapstructure:"anthropic"`
 	Google      GoogleConfig    `mapstructure:"google"`
 	Mistral     MistralConfig   `mapstructure:"mistral"`
-	Judge       JudgeConfig     `mapstructure:"judge"`
+	Cohere      CohereConfig    `mapstructure:"cohere"`
+	Groq        GroqConfig      `mapstructure:"groq"`
+	DeepSeek    DeepSeekConfig  `mapstructure:"deepseek"`
+	XAI         XAIConfig       `mapstructure:"xai"`
+	TogetherAI  TogetherAIConfig  `mapstructure:"togetherai"`
+	Cerebras    CerebrasConfig   `mapstructure:"cerebras"`
+	Fireworks   FireworksConfig  `mapstructure:"fireworks"`
+	DeepInfra   DeepInfraConfig  `mapstructure:"deepinfra"`
+	NVIDIA      NVIDIAConfig     `mapstructure:"nvidia"`
+	Alibaba     AlibabaConfig    `mapstructure:"alibaba"`
+	MiniMax     MiniMaxConfig    `mapstructure:"minimax"`
+	MoonshotAI  MoonshotAIConfig `mapstructure:"moonshotai"`
+	Nebius      NebiusConfig     `mapstructure:"nebius"`
+	SiliconFlow SiliconFlowConfig `mapstructure:"siliconflow"`
+	Inception   InceptionConfig  `mapstructure:"inception"`
+	Llama       LlamaConfig      `mapstructure:"llama"`
+	Upstage     UpstageConfig    `mapstructure:"upstage"`
+	Nova        NovaConfig       `mapstructure:"nova"`
+	NovitaAI    NovitaAIConfig   `mapstructure:"novitaai"`
+	Friendli    FriendliConfig   `mapstructure:"friendli"`
+	StepFun     StepFunConfig    `mapstructure:"stepfun"`
+	ZhipuAI     ZhipuAIConfig    `mapstructure:"zhipuai"`
+	Venice      VeniceConfig     `mapstructure:"venice"`
+	Bailing     BailingConfig    `mapstructure:"bailing"`
+	Judge       JudgeConfig      `mapstructure:"judge"`
 	Diff        DiffConfig      `mapstructure:"diff"`
 	Health      HealthConfig    `mapstructure:"health"`
 	LogLevel    string          `mapstructure:"log_level"`
@@ -57,6 +81,150 @@ type GoogleConfig struct {
 
 // MistralConfig holds Mistral-specific settings.
 type MistralConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// CohereConfig holds Cohere-specific settings.
+type CohereConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// GroqConfig holds Groq-specific settings.
+type GroqConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// DeepSeekConfig holds DeepSeek-specific settings.
+type DeepSeekConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// XAIConfig holds xAI (Grok)-specific settings.
+type XAIConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// TogetherAIConfig holds Together AI-specific settings.
+type TogetherAIConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// CerebrasConfig holds Cerebras-specific settings.
+type CerebrasConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// FireworksConfig holds Fireworks AI-specific settings.
+type FireworksConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// DeepInfraConfig holds DeepInfra-specific settings.
+type DeepInfraConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// NVIDIAConfig holds NVIDIA NIM-specific settings.
+type NVIDIAConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// AlibabaConfig holds Alibaba/DashScope-specific settings.
+type AlibabaConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// MiniMaxConfig holds MiniMax-specific settings.
+type MiniMaxConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// MoonshotAIConfig holds Moonshot AI-specific settings.
+type MoonshotAIConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// NebiusConfig holds Nebius-specific settings.
+type NebiusConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// SiliconFlowConfig holds SiliconFlow-specific settings.
+type SiliconFlowConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// InceptionConfig holds Inception Labs-specific settings.
+type InceptionConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// LlamaConfig holds Meta Llama API-specific settings.
+type LlamaConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// UpstageConfig holds Upstage-specific settings.
+type UpstageConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// NovaConfig holds Amazon Nova-specific settings.
+type NovaConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// NovitaAIConfig holds Novita AI-specific settings.
+type NovitaAIConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// FriendliConfig holds Friendli-specific settings.
+type FriendliConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// StepFunConfig holds StepFun-specific settings.
+type StepFunConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// ZhipuAIConfig holds Zhipu AI-specific settings.
+type ZhipuAIConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// VeniceConfig holds Venice AI-specific settings.
+type VeniceConfig struct {
+	APIKey  string `mapstructure:"api_key"`
+	BaseURL string `mapstructure:"base_url"`
+}
+
+// BailingConfig holds Bailing-specific settings.
+type BailingConfig struct {
 	APIKey  string `mapstructure:"api_key"`
 	BaseURL string `mapstructure:"base_url"`
 }
@@ -100,6 +268,30 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("anthropic.base_url", "https://api.anthropic.com/v1")
 	v.SetDefault("google.base_url", "https://generativelanguage.googleapis.com/v1beta")
 	v.SetDefault("mistral.base_url", "https://api.mistral.ai/v1")
+	v.SetDefault("cohere.base_url", "https://api.cohere.com/v2")
+	v.SetDefault("groq.base_url", "https://api.groq.com/openai/v1")
+	v.SetDefault("deepseek.base_url", "https://api.deepseek.com")
+	v.SetDefault("xai.base_url", "https://api.x.ai/v1")
+	v.SetDefault("togetherai.base_url", "https://api.together.xyz/v1")
+	v.SetDefault("cerebras.base_url", "https://api.cerebras.ai/v1")
+	v.SetDefault("fireworks.base_url", "https://api.fireworks.ai/inference/v1")
+	v.SetDefault("deepinfra.base_url", "https://api.deepinfra.com/v1/openai")
+	v.SetDefault("nvidia.base_url", "https://integrate.api.nvidia.com/v1")
+	v.SetDefault("alibaba.base_url", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+	v.SetDefault("minimax.base_url", "https://api.minimax.io/v1")
+	v.SetDefault("moonshotai.base_url", "https://api.moonshot.ai/v1")
+	v.SetDefault("nebius.base_url", "https://api.tokenfactory.nebius.com/v1")
+	v.SetDefault("siliconflow.base_url", "https://api.siliconflow.com/v1")
+	v.SetDefault("inception.base_url", "https://api.inceptionlabs.ai/v1")
+	v.SetDefault("llama.base_url", "https://api.llama.com/compat/v1")
+	v.SetDefault("upstage.base_url", "https://api.upstage.ai/v1/solar")
+	v.SetDefault("nova.base_url", "https://api.nova.amazon.com/v1")
+	v.SetDefault("novitaai.base_url", "https://api.novita.ai/openai")
+	v.SetDefault("friendli.base_url", "https://api.friendli.ai/serverless/v1")
+	v.SetDefault("stepfun.base_url", "https://api.stepfun.com/v1")
+	v.SetDefault("zhipuai.base_url", "https://open.bigmodel.cn/api/paas/v4")
+	v.SetDefault("venice.base_url", "https://api.venice.ai/api/v1")
+	v.SetDefault("bailing.base_url", "https://api.tbox.cn/api/llm/v1")
 	v.SetDefault("diff.track_display_name", false)
 	v.SetDefault("health.enabled", true)
 	v.SetDefault("health.threshold", 0.90)
@@ -132,6 +324,30 @@ func Load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("google.base_url", "SENTINEL_GOOGLE_BASE_URL")
 	_ = v.BindEnv("mistral.api_key", "MISTRAL_API_KEY")
 	_ = v.BindEnv("mistral.base_url", "SENTINEL_MISTRAL_BASE_URL")
+	_ = v.BindEnv("cohere.api_key", "COHERE_API_KEY")
+	_ = v.BindEnv("groq.api_key", "GROQ_API_KEY")
+	_ = v.BindEnv("deepseek.api_key", "DEEPSEEK_API_KEY")
+	_ = v.BindEnv("xai.api_key", "XAI_API_KEY")
+	_ = v.BindEnv("togetherai.api_key", "TOGETHER_API_KEY")
+	_ = v.BindEnv("cerebras.api_key", "CEREBRAS_API_KEY")
+	_ = v.BindEnv("fireworks.api_key", "FIREWORKS_API_KEY")
+	_ = v.BindEnv("deepinfra.api_key", "DEEPINFRA_API_KEY")
+	_ = v.BindEnv("nvidia.api_key", "NVIDIA_API_KEY")
+	_ = v.BindEnv("alibaba.api_key", "DASHSCOPE_API_KEY")
+	_ = v.BindEnv("minimax.api_key", "MINIMAX_API_KEY")
+	_ = v.BindEnv("moonshotai.api_key", "MOONSHOT_API_KEY")
+	_ = v.BindEnv("nebius.api_key", "NEBIUS_API_KEY")
+	_ = v.BindEnv("siliconflow.api_key", "SILICONFLOW_API_KEY")
+	_ = v.BindEnv("inception.api_key", "INCEPTION_API_KEY")
+	_ = v.BindEnv("llama.api_key", "LLAMA_API_KEY")
+	_ = v.BindEnv("upstage.api_key", "UPSTAGE_API_KEY")
+	_ = v.BindEnv("nova.api_key", "NOVA_API_KEY")
+	_ = v.BindEnv("novitaai.api_key", "NOVITA_API_KEY")
+	_ = v.BindEnv("friendli.api_key", "FRIENDLI_TOKEN")
+	_ = v.BindEnv("stepfun.api_key", "STEPFUN_API_KEY")
+	_ = v.BindEnv("zhipuai.api_key", "ZHIPU_API_KEY")
+	_ = v.BindEnv("venice.api_key", "VENICE_API_KEY")
+	_ = v.BindEnv("bailing.api_key", "BAILING_API_TOKEN")
 	_ = v.BindEnv("judge.enabled", "SENTINEL_JUDGE_ENABLED")
 	_ = v.BindEnv("judge.provider", "SENTINEL_JUDGE_PROVIDER")
 	_ = v.BindEnv("judge.model", "SENTINEL_JUDGE_MODEL")

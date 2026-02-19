@@ -205,9 +205,12 @@ func inferDisplayName(id string) string {
 func inferCapabilities(id string) []string {
 	caps := []string{"chat", "function_calling", "vision", "streaming"}
 
-	// All non-haiku Claude models get extended_thinking
-	if !strings.Contains(id, "haiku") {
-		caps = append(caps, "extended_thinking")
+	// All current Claude models support extended_thinking
+	caps = append(caps, "extended_thinking")
+
+	// Claude 4.6 models support adaptive_thinking
+	if strings.Contains(id, "opus-4-6") || strings.Contains(id, "sonnet-4-6") {
+		caps = append(caps, "adaptive_thinking")
 	}
 
 	return caps
@@ -221,8 +224,18 @@ func inferModalities(id string) adapter.Modalities {
 }
 
 func inferLimits(id, family string) adapter.Limits {
-	switch family {
-	case "claude-haiku":
+	switch {
+	case strings.Contains(id, "opus-4-6"):
+		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 128000}
+	case strings.Contains(id, "sonnet-4-6"):
+		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 64000}
+	case strings.Contains(id, "sonnet-4-5"), strings.Contains(id, "sonnet-4-0"), strings.Contains(id, "3-7-sonnet"):
+		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 64000}
+	case strings.Contains(id, "opus-4-5"), strings.Contains(id, "opus-4-1"), strings.Contains(id, "opus-4-0"):
+		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 32000}
+	case strings.Contains(id, "haiku-4-5"):
+		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 64000}
+	case family == "claude-haiku":
 		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 4096}
 	default:
 		return adapter.Limits{MaxTokens: 200000, MaxCompletionTokens: 8192}

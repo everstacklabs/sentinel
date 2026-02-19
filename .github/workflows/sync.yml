@@ -52,6 +52,30 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          INCEPTION_API_KEY: ${{ secrets.INCEPTION_API_KEY }}
+          LLAMA_API_KEY: ${{ secrets.LLAMA_API_KEY }}
+          UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          NOVA_API_KEY: ${{ secrets.NOVA_API_KEY }}
+          NOVITA_API_KEY: ${{ secrets.NOVITA_API_KEY }}
+          FRIENDLI_TOKEN: ${{ secrets.FRIENDLI_TOKEN }}
+          STEPFUN_API_KEY: ${{ secrets.STEPFUN_API_KEY }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+          VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
+          BAILING_API_TOKEN: ${{ secrets.BAILING_API_TOKEN }}
           SENTINEL_CATALOG_PATH: ./model-catalog
           SENTINEL_GITHUB_OWNER: midfusionlabs
           SENTINEL_GITHUB_REPO: model-catalog

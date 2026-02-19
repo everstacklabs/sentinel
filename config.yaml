@@ -14,6 +14,30 @@ providers:
   - anthropic
   - google
   - mistral
+  - cohere
+  - groq
+  - deepseek
+  - xai
+  - togetherai
+  - cerebras
+  - fireworks
+  - deepinfra
+  - nvidia
+  - alibaba
+  - minimax
+  - moonshotai
+  - nebius
+  - siliconflow
+  - inception
+  - llama
+  - upstage
+  - nova
+  - novitaai
+  - friendli
+  - stepfun
+  - zhipuai
+  - venice
+  - bailing
   - perplexity   # docs-only, no API key needed
   - ai21         # docs-only, no API key needed
 
@@ -69,6 +93,126 @@ google:
 mistral:
   # api_key: set via MISTRAL_API_KEY env var
   base_url: "https://api.mistral.ai/v1"
+
+# Cohere settings
+cohere:
+  # api_key: set via COHERE_API_KEY env var
+  base_url: "https://api.cohere.com/v2"
+
+# Groq settings
+groq:
+  # api_key: set via GROQ_API_KEY env var
+  base_url: "https://api.groq.com/openai/v1"
+
+# DeepSeek settings
+deepseek:
+  # api_key: set via DEEPSEEK_API_KEY env var
+  base_url: "https://api.deepseek.com"
+
+# xAI (Grok) settings
+xai:
+  # api_key: set via XAI_API_KEY env var
+  base_url: "https://api.x.ai/v1"
+
+# Together AI settings
+togetherai:
+  # api_key: set via TOGETHER_API_KEY env var
+  base_url: "https://api.together.xyz/v1"
+
+# Cerebras settings
+cerebras:
+  # api_key: set via CEREBRAS_API_KEY env var
+  base_url: "https://api.cerebras.ai/v1"
+
+# Fireworks AI settings
+fireworks:
+  # api_key: set via FIREWORKS_API_KEY env var
+  base_url: "https://api.fireworks.ai/inference/v1"
+
+# DeepInfra settings
+deepinfra:
+  # api_key: set via DEEPINFRA_API_KEY env var
+  base_url: "https://api.deepinfra.com/v1/openai"
+
+# NVIDIA NIM settings
+nvidia:
+  # api_key: set via NVIDIA_API_KEY env var
+  base_url: "https://integrate.api.nvidia.com/v1"
+
+# Alibaba/DashScope settings
+alibaba:
+  # api_key: set via DASHSCOPE_API_KEY env var
+  base_url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+# MiniMax settings
+minimax:
+  # api_key: set via MINIMAX_API_KEY env var
+  base_url: "https://api.minimax.io/v1"
+
+# Moonshot AI settings
+moonshotai:
+  # api_key: set via MOONSHOT_API_KEY env var
+  base_url: "https://api.moonshot.ai/v1"
+
+# Nebius settings
+nebius:
+  # api_key: set via NEBIUS_API_KEY env var
+  base_url: "https://api.tokenfactory.nebius.com/v1"
+
+# SiliconFlow settings
+siliconflow:
+  # api_key: set via SILICONFLOW_API_KEY env var
+  base_url: "https://api.siliconflow.com/v1"
+
+# Inception Labs settings
+inception:
+  # api_key: set via INCEPTION_API_KEY env var
+  base_url: "https://api.inceptionlabs.ai/v1"
+
+# Meta Llama API settings
+llama:
+  # api_key: set via LLAMA_API_KEY env var
+  base_url: "https://api.llama.com/compat/v1"
+
+# Upstage settings
+upstage:
+  # api_key: set via UPSTAGE_API_KEY env var
+  base_url: "https://api.upstage.ai/v1/solar"
+
+# Amazon Nova settings
+nova:
+  # api_key: set via NOVA_API_KEY env var
+  base_url: "https://api.nova.amazon.com/v1"
+
+# Novita AI settings
+novitaai:
+  # api_key: set via NOVITA_API_KEY env var
+  base_url: "https://api.novita.ai/openai"
+
+# Friendli settings
+friendli:
+  # api_key: set via FRIENDLI_TOKEN env var
+  base_url: "https://api.friendli.ai/serverless/v1"
+
+# StepFun settings
+stepfun:
+  # api_key: set via STEPFUN_API_KEY env var
+  base_url: "https://api.stepfun.com/v1"
+
+# Zhipu AI settings
+zhipuai:
+  # api_key: set via ZHIPU_API_KEY env var
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+
+# Venice AI settings
+venice:
+  # api_key: set via VENICE_API_KEY env var
+  base_url: "https://api.venice.ai/api/v1"
+
+# Bailing settings
+bailing:
+  # api_key: set via BAILING_API_TOKEN env var
+  base_url: "https://api.tbox.cn/api/llm/v1"
 
 # LLM-as-Judge settings
 judge:
