@@ -39,6 +39,10 @@ func (g *Google) Configure(apiKey, baseURL string, client *httpclient.Client) {
 
 // HealthCheck performs a lightweight GET to the models endpoint.
 func (g *Google) HealthCheck(ctx context.Context) error {
+	if g.apiKey == "" {
+		slog.Warn("google api key missing; skipping health check")
+		return nil
+	}
 	url := g.baseURL + "/models?pageSize=1&key=" + g.apiKey
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -61,7 +65,11 @@ func (g *Google) Discover(ctx context.Context, opts adapter.DiscoverOptions) ([]
 			}
 			models = append(models, apiModels...)
 		case adapter.SourceDocs:
-			slog.Warn("google docs source not implemented in Phase 1")
+			docModels, err := g.discoverFromDocs(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("google docs discovery: %w", err)
+			}
+			models = append(models, docModels...)
 		}
 	}
 
@@ -86,11 +94,44 @@ type apiModel struct {
 }
 
 func (g *Google) discoverFromAPI(ctx context.Context) ([]adapter.DiscoveredModel, error) {
+	if g.apiKey == "" {
+		slog.Warn("google api key missing; skipping API discovery")
+		return nil, nil
+	}
+	primaryModels, err := g.listModelsFromAPI(ctx, g.baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	allAPIModels := primaryModels
+	if strings.HasSuffix(g.baseURL, "/v1beta") {
+		v1BaseURL := strings.TrimSuffix(g.baseURL, "/v1beta") + "/v1"
+		v1Models, err := g.listModelsFromAPI(ctx, v1BaseURL)
+		if err != nil {
+			slog.Warn("google API v1 discovery failed", "error", err)
+		} else {
+			allAPIModels = mergeAPIModels(primaryModels, v1Models)
+		}
+	}
+
+	var models []adapter.DiscoveredModel
+	for _, am := range allAPIModels {
+		m := g.apiModelToDiscovered(am)
+		if m != nil {
+			models = append(models, *m)
+		}
+	}
+
+	slog.Info("google API discovery complete", "total_api_models", len(allAPIModels), "catalog_models", len(models))
+	return models, nil
+}
+
+func (g *Google) listModelsFromAPI(ctx context.Context, baseURL string) ([]apiModel, error) {
 	var allAPIModels []apiModel
 	pageToken := ""
 
 	for {
-		url := g.baseURL + "/models?pageSize=1000&key=" + g.apiKey
+		url := baseURL + "/models?pageSize=1000&key=" + g.apiKey
 		if pageToken != "" {
 			url += "&pageToken=" + pageToken
 		}
@@ -113,16 +154,34 @@ func (g *Google) discoverFromAPI(ctx context.Context) ([]adapter.DiscoveredModel
 		pageToken = modelsResp.NextPageToken
 	}
 
-	var models []adapter.DiscoveredModel
-	for _, am := range allAPIModels {
-		m := g.apiModelToDiscovered(am)
-		if m != nil {
-			models = append(models, *m)
+	return allAPIModels, nil
+}
+
+func mergeAPIModels(primary, secondary []apiModel) []apiModel {
+	if len(secondary) == 0 {
+		return primary
+	}
+	byName := make(map[string]apiModel, len(primary)+len(secondary))
+	order := make([]string, 0, len(primary)+len(secondary))
+
+	for _, m := range primary {
+		if _, ok := byName[m.Name]; !ok {
+			order = append(order, m.Name)
+		}
+		byName[m.Name] = m
+	}
+	for _, m := range secondary {
+		if _, ok := byName[m.Name]; !ok {
+			order = append(order, m.Name)
+			byName[m.Name] = m
 		}
 	}
 
-	slog.Info("google API discovery complete", "total_api_models", len(allAPIModels), "catalog_models", len(models))
-	return models, nil
+	result := make([]apiModel, 0, len(order))
+	for _, name := range order {
+		result = append(result, byName[name])
+	}
+	return result
 }
 
 // apiModelToDiscovered converts a Gemini API model to a DiscoveredModel.
@@ -189,6 +248,8 @@ func shouldSkip(id string, methods []string) bool {
 
 func inferFamily(id string) string {
 	switch {
+	case strings.HasPrefix(id, "gemini-3"):
+		return "gemini-3"
 	case strings.HasPrefix(id, "gemini-2"):
 		return "gemini-2"
 	case strings.HasPrefix(id, "gemini-1.5"):

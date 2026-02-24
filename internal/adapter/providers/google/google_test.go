@@ -49,6 +49,7 @@ func TestInferFamily(t *testing.T) {
 		id   string
 		want string
 	}{
+		{"gemini-3.1-pro", "gemini-3"},
 		{"gemini-2.0-flash", "gemini-2"},
 		{"gemini-2.0-flash-lite", "gemini-2"},
 		{"gemini-2.5-pro", "gemini-2"},
