@@ -173,7 +173,9 @@ func (p *Pipeline) enableAutoMerge(ctx context.Context, pr *github.PullRequest, 
 	if err != nil {
 		return fmt.Errorf("calling github graphql: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
