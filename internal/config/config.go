@@ -4,53 +4,54 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/viper"
 )
 
 // Config holds all configuration for the sentinel.
 type Config struct {
-	CatalogPath string          `mapstructure:"catalog_path"`
-	CacheDir    string          `mapstructure:"cache_dir"`
-	CacheTTL    string          `mapstructure:"cache_ttl"`
-	Providers   []string        `mapstructure:"providers"`
-	Sources     []string        `mapstructure:"sources"`
-	DryRun      bool            `mapstructure:"dry_run"`
-	NoCache     bool            `mapstructure:"no_cache"`
-	RiskMode    string          `mapstructure:"risk_mode"`
-	GitHub      GitHubConfig    `mapstructure:"github"`
-	OpenAI      OpenAIConfig    `mapstructure:"openai"`
-	Anthropic   AnthropicConfig `mapstructure:"anthropic"`
-	Google      GoogleConfig    `mapstructure:"google"`
-	Mistral     MistralConfig   `mapstructure:"mistral"`
-	Cohere      CohereConfig    `mapstructure:"cohere"`
-	Groq        GroqConfig      `mapstructure:"groq"`
-	DeepSeek    DeepSeekConfig  `mapstructure:"deepseek"`
-	XAI         XAIConfig       `mapstructure:"xai"`
+	CatalogPath string            `mapstructure:"catalog_path"`
+	CacheDir    string            `mapstructure:"cache_dir"`
+	CacheTTL    string            `mapstructure:"cache_ttl"`
+	Providers   []string          `mapstructure:"providers"`
+	Sources     []string          `mapstructure:"sources"`
+	DryRun      bool              `mapstructure:"dry_run"`
+	NoCache     bool              `mapstructure:"no_cache"`
+	RiskMode    string            `mapstructure:"risk_mode"`
+	GitHub      GitHubConfig      `mapstructure:"github"`
+	OpenAI      OpenAIConfig      `mapstructure:"openai"`
+	Anthropic   AnthropicConfig   `mapstructure:"anthropic"`
+	Google      GoogleConfig      `mapstructure:"google"`
+	Mistral     MistralConfig     `mapstructure:"mistral"`
+	Cohere      CohereConfig      `mapstructure:"cohere"`
+	Groq        GroqConfig        `mapstructure:"groq"`
+	DeepSeek    DeepSeekConfig    `mapstructure:"deepseek"`
+	XAI         XAIConfig         `mapstructure:"xai"`
 	TogetherAI  TogetherAIConfig  `mapstructure:"togetherai"`
-	Cerebras    CerebrasConfig   `mapstructure:"cerebras"`
-	Fireworks   FireworksConfig  `mapstructure:"fireworks"`
-	DeepInfra   DeepInfraConfig  `mapstructure:"deepinfra"`
-	NVIDIA      NVIDIAConfig     `mapstructure:"nvidia"`
-	Alibaba     AlibabaConfig    `mapstructure:"alibaba"`
-	MiniMax     MiniMaxConfig    `mapstructure:"minimax"`
-	MoonshotAI  MoonshotAIConfig `mapstructure:"moonshotai"`
-	Nebius      NebiusConfig     `mapstructure:"nebius"`
+	Cerebras    CerebrasConfig    `mapstructure:"cerebras"`
+	Fireworks   FireworksConfig   `mapstructure:"fireworks"`
+	DeepInfra   DeepInfraConfig   `mapstructure:"deepinfra"`
+	NVIDIA      NVIDIAConfig      `mapstructure:"nvidia"`
+	Alibaba     AlibabaConfig     `mapstructure:"alibaba"`
+	MiniMax     MiniMaxConfig     `mapstructure:"minimax"`
+	MoonshotAI  MoonshotAIConfig  `mapstructure:"moonshotai"`
+	Nebius      NebiusConfig      `mapstructure:"nebius"`
 	SiliconFlow SiliconFlowConfig `mapstructure:"siliconflow"`
-	Inception   InceptionConfig  `mapstructure:"inception"`
-	Llama       LlamaConfig      `mapstructure:"llama"`
-	Upstage     UpstageConfig    `mapstructure:"upstage"`
-	Nova        NovaConfig       `mapstructure:"nova"`
-	NovitaAI    NovitaAIConfig   `mapstructure:"novitaai"`
-	Friendli    FriendliConfig   `mapstructure:"friendli"`
-	StepFun     StepFunConfig    `mapstructure:"stepfun"`
-	ZhipuAI     ZhipuAIConfig    `mapstructure:"zhipuai"`
-	Venice      VeniceConfig     `mapstructure:"venice"`
-	Bailing     BailingConfig    `mapstructure:"bailing"`
-	Judge       JudgeConfig      `mapstructure:"judge"`
-	Diff        DiffConfig      `mapstructure:"diff"`
-	Health      HealthConfig    `mapstructure:"health"`
-	LogLevel    string          `mapstructure:"log_level"`
+	Inception   InceptionConfig   `mapstructure:"inception"`
+	Llama       LlamaConfig       `mapstructure:"llama"`
+	Upstage     UpstageConfig     `mapstructure:"upstage"`
+	Nova        NovaConfig        `mapstructure:"nova"`
+	NovitaAI    NovitaAIConfig    `mapstructure:"novitaai"`
+	Friendli    FriendliConfig    `mapstructure:"friendli"`
+	StepFun     StepFunConfig     `mapstructure:"stepfun"`
+	ZhipuAI     ZhipuAIConfig     `mapstructure:"zhipuai"`
+	Venice      VeniceConfig      `mapstructure:"venice"`
+	Bailing     BailingConfig     `mapstructure:"bailing"`
+	Judge       JudgeConfig       `mapstructure:"judge"`
+	Diff        DiffConfig        `mapstructure:"diff"`
+	Health      HealthConfig      `mapstructure:"health"`
+	LogLevel    string            `mapstructure:"log_level"`
 }
 
 // GitHubConfig holds GitHub-related settings.
@@ -254,7 +255,7 @@ func Load(cfgFile string) (*Config, error) {
 	v := viper.New()
 
 	// Defaults
-	v.SetDefault("catalog_path", "../model-catalog")
+	v.SetDefault("catalog_path", "../llm-catalog")
 	v.SetDefault("cache_dir", defaultCacheDir())
 	v.SetDefault("cache_ttl", "1h")
 	v.SetDefault("providers", []string{"openai"})
@@ -263,7 +264,9 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("no_cache", false)
 	v.SetDefault("risk_mode", "strict")
 	v.SetDefault("log_level", "info")
-	v.SetDefault("github.base_branch", "main")
+	v.SetDefault("github.owner", "everstacklabs")
+	v.SetDefault("github.repo", "llm-catalog")
+	v.SetDefault("github.base_branch", "master")
 	v.SetDefault("openai.base_url", "https://api.openai.com/v1")
 	v.SetDefault("anthropic.base_url", "https://api.anthropic.com/v1")
 	v.SetDefault("google.base_url", "https://generativelanguage.googleapis.com/v1beta")
@@ -313,9 +316,18 @@ func Load(cfgFile string) (*Config, error) {
 
 	// Environment variables
 	v.SetEnvPrefix("SENTINEL")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 
 	// Bind specific env vars
+	_ = v.BindEnv("catalog_path", "SENTINEL_CATALOG_PATH")
+	_ = v.BindEnv("providers", "SENTINEL_PROVIDERS")
+	_ = v.BindEnv("sources", "SENTINEL_SOURCES")
+	_ = v.BindEnv("dry_run", "SENTINEL_DRY_RUN")
+	_ = v.BindEnv("no_cache", "SENTINEL_NO_CACHE")
+	_ = v.BindEnv("github.owner", "SENTINEL_GITHUB_OWNER")
+	_ = v.BindEnv("github.repo", "SENTINEL_GITHUB_REPO")
+	_ = v.BindEnv("github.base_branch", "SENTINEL_GITHUB_BASE_BRANCH")
 	_ = v.BindEnv("github.token", "GITHUB_TOKEN")
 	_ = v.BindEnv("openai.api_key", "OPENAI_API_KEY")
 	_ = v.BindEnv("anthropic.api_key", "ANTHROPIC_API_KEY")

@@ -84,14 +84,20 @@ func (p *Pipeline) Diff(ctx context.Context) ([]diff.ChangeSet, error) {
 	}
 
 	var changesets []diff.ChangeSet
+	failures := 0
 
 	for _, providerName := range p.cfg.Providers {
 		cs, err := p.discoverAndDiff(ctx, providerName)
 		if err != nil {
+			failures++
 			slog.Error("diff failed", "provider", providerName, "error", err)
 			continue
 		}
 		changesets = append(changesets, *cs)
+	}
+
+	if failures > 0 {
+		return changesets, fmt.Errorf("%d provider diff(s) failed", failures)
 	}
 
 	return changesets, nil
@@ -112,6 +118,12 @@ func (p *Pipeline) syncProvider(ctx context.Context, providerName string) SyncRe
 		slog.Info("no changes detected", "provider", providerName)
 		result.Skipped = true
 		result.SkipReason = "no changes"
+		return result
+	}
+	if len(cs.New) == 0 && len(cs.Updated) == 0 {
+		slog.Warn("deprecation-only changes require manual review", "provider", providerName, "deprecation_candidates", len(cs.DeprecationCandidates))
+		result.Skipped = true
+		result.SkipReason = "deprecation-only changes require manual review"
 		return result
 	}
 
@@ -235,6 +247,13 @@ func (p *Pipeline) discoverAndDiff(ctx context.Context, providerName string) (*d
 	existing := make(map[string]*catalog.Model)
 	if pc, ok := p.catalog.Providers[providerName]; ok {
 		existing = pc.Models
+	}
+
+	if len(discovered) == 0 && len(existing) > 0 {
+		return nil, &SourceHealthError{
+			Provider: providerName,
+			Reason:   fmt.Sprintf("discovery returned zero models for provider with %d catalog models", len(existing)),
+		}
 	}
 
 	opts := diff.DiffOptions{

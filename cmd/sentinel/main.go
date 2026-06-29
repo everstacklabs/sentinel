@@ -84,9 +84,10 @@ var cfgFile string
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "sentinel",
-		Short: "Keeps your AI model catalog in sync with reality.",
-		Long:  "An open-source tool that discovers AI models from provider APIs and opens PRs to keep your catalog up to date.",
+		Use:          "sentinel",
+		Short:        "Keeps your AI model catalog in sync with reality.",
+		Long:         "An open-source tool that discovers AI models from provider APIs and opens PRs to keep your catalog up to date.",
+		SilenceUsage: true,
 	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ./config.yaml)")
@@ -112,6 +113,7 @@ func syncCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			applySyncFlags(cmd, cfg)
 
 			configureAdapters(cfg)
 
@@ -121,8 +123,10 @@ func syncCmd() *cobra.Command {
 				return err
 			}
 
+			failures := 0
 			for _, r := range results {
 				if r.Error != nil {
+					failures++
 					slog.Error("sync failed", "provider", r.Provider, "error", r.Error)
 				} else if r.Skipped {
 					slog.Info("sync skipped", "provider", r.Provider, "reason", r.SkipReason)
@@ -133,6 +137,9 @@ func syncCmd() *cobra.Command {
 				}
 			}
 
+			if failures > 0 {
+				return fmt.Errorf("%d provider sync(s) failed", failures)
+			}
 			return nil
 		},
 	}
@@ -144,7 +151,7 @@ func syncCmd() *cobra.Command {
 }
 
 func diffCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "diff",
 		Short: "Show what would change (no writes)",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -152,6 +159,7 @@ func diffCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			applyProviderFlag(cmd, cfg)
 
 			configureAdapters(cfg)
 
@@ -175,6 +183,10 @@ func diffCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringSlice("providers", nil, "Providers to diff (default: all configured)")
+
+	return cmd
 }
 
 func discoverCmd() *cobra.Command {
@@ -268,6 +280,23 @@ func loadConfig() (*config.Config, error) {
 		return nil, fmt.Errorf("loading config: %w", err)
 	}
 	return cfg, nil
+}
+
+func applySyncFlags(cmd *cobra.Command, cfg *config.Config) {
+	if cmd.Flags().Changed("dry-run") {
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		cfg.DryRun = dryRun
+	}
+	applyProviderFlag(cmd, cfg)
+}
+
+func applyProviderFlag(cmd *cobra.Command, cfg *config.Config) {
+	if cmd.Flags().Changed("providers") {
+		providers, _ := cmd.Flags().GetStringSlice("providers")
+		if len(providers) > 0 {
+			cfg.Providers = providers
+		}
+	}
 }
 
 func configureAdapters(cfg *config.Config) {

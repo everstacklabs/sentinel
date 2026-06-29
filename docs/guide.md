@@ -91,7 +91,7 @@ You can add any extra fields you need (e.g., `api_type`, `custom_notes`). Sentin
 ## 2. Install Sentinel
 
 ```bash
-git clone https://github.com/midfusionlabs/sentinel.git
+git clone https://github.com/everstacklabs/sentinel.git
 cd sentinel
 make build
 ```
@@ -232,13 +232,13 @@ jobs:
         with:
           repository: your-org/your-catalog
           token: ${{ secrets.GH_PAT }}
-          path: model-catalog
+          path: llm-catalog
 
       - name: Run sync
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SENTINEL_CATALOG_PATH: ./model-catalog
+          SENTINEL_CATALOG_PATH: ./llm-catalog
           SENTINEL_GITHUB_OWNER: your-org
           SENTINEL_GITHUB_REPO: your-catalog
           SENTINEL_GITHUB_BASE_BRANCH: main

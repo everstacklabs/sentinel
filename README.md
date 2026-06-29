@@ -107,7 +107,7 @@ sentinel validate --catalog-path=./cat  # validate catalog YAML (CI check)
 Copy `config.example.yaml` to `config.yaml`:
 
 ```yaml
-catalog_path: "../model-catalog"
+catalog_path: "../llm-catalog"
 cache_dir: "~/.cache/sentinel"
 cache_ttl: "1h"
 providers:
@@ -119,9 +119,9 @@ risk_mode: "strict" # "strict" or "relaxed"
 log_level: "info"
 
 github:
-  owner: "your-org"
-  repo: "your-catalog-repo"
-  base_branch: "main"
+  owner: "everstacklabs"
+  repo: "llm-catalog"
+  base_branch: "master"
 
 openai:
   base_url: "https://api.openai.com/v1"

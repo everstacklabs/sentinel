@@ -71,18 +71,27 @@ func (r *Result) Warnings() []Issue {
 
 // Known capability values (warn on unknown, don't block).
 var knownCapabilities = map[string]bool{
+	"adaptive_thinking": true,
+	"audio":             true,
 	"chat":              true,
-	"completions":       true,
-	"embeddings":        true,
-	"function_calling":  true,
-	"vision":            true,
-	"streaming":         true,
-	"fine_tuning":       true,
-	"extended_thinking": true,
-	"computer_use":      true,
-	"reasoning":         true,
+	"code_interpreter":  true,
 	"coding":            true,
+	"computer_use":      true,
+	"completions":       true,
+	"deep_research":     true,
+	"embeddings":        true,
+	"extended_thinking": true,
+	"fill_in_middle":    true,
+	"function_calling":  true,
+	"fine_tuning":       true,
+	"image_generation":  true,
+	"json_mode":         true,
+	"json_schema":       true,
+	"reasoning":         true,
 	"rerank":            true,
+	"search":            true,
+	"streaming":         true,
+	"vision":            true,
 }
 
 // Known modality values.
@@ -91,8 +100,12 @@ var knownModalities = map[string]bool{
 	"image":     true,
 	"audio":     true,
 	"video":     true,
+	"file":      true,
+	"pdf":       true,
 	"embedding": true,
 }
+
+const maxReasonableCostPer1K = 1.0
 
 // ValidateModel checks a single model for schema compliance.
 func ValidateModel(m *catalog.Model, filename string) *Result {
@@ -155,13 +168,13 @@ func ValidateModel(m *catalog.Model, filename string) *Result {
 
 	// Pricing sanity
 	if m.Cost != nil {
-		if m.Cost.InputPer1K < 0 || m.Cost.InputPer1K > 0.10 {
+		if m.Cost.InputPer1K < 0 || m.Cost.InputPer1K > maxReasonableCostPer1K {
 			r.Issues = append(r.Issues, Issue{SeverityError, m.Name, "cost.input_per_1k",
-				fmt.Sprintf("value %.6f outside expected range [0, 0.10]", m.Cost.InputPer1K)})
+				fmt.Sprintf("value %.6f outside expected range [0, %.2f]", m.Cost.InputPer1K, maxReasonableCostPer1K)})
 		}
-		if m.Cost.OutputPer1K < 0 || m.Cost.OutputPer1K > 0.10 {
+		if m.Cost.OutputPer1K < 0 || m.Cost.OutputPer1K > maxReasonableCostPer1K {
 			r.Issues = append(r.Issues, Issue{SeverityError, m.Name, "cost.output_per_1k",
-				fmt.Sprintf("value %.6f outside expected range [0, 0.10]", m.Cost.OutputPer1K)})
+				fmt.Sprintf("value %.6f outside expected range [0, %.2f]", m.Cost.OutputPer1K, maxReasonableCostPer1K)})
 		}
 		if !isEmbedding && m.Cost.OutputPer1K == 0 {
 			r.Issues = append(r.Issues, Issue{SeverityWarning, m.Name, "cost.output_per_1k",

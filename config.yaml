@@ -1,8 +1,8 @@
 # Sentinel Configuration
 # Used as the default config. Override with --config or environment variables.
 
-# Path to the model-catalog directory (relative or absolute)
-catalog_path: "../model-catalog"
+# Path to the llm-catalog directory (relative or absolute)
+catalog_path: "../llm-catalog"
 
 # Cache settings
 cache_dir: "~/.cache/sentinel"
@@ -61,9 +61,9 @@ log_level: "info"
 # GitHub settings (for PR creation)
 github:
   # token: set via GITHUB_TOKEN env var
-  owner: "midfusionlabs"
-  repo: "model-catalog"
-  base_branch: "main"
+  owner: "everstacklabs"
+  repo: "llm-catalog"
+  base_branch: "master"
 
 # Diff settings
 diff:
