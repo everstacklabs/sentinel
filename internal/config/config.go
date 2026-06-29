@@ -51,6 +51,7 @@ type Config struct {
 	Judge       JudgeConfig       `mapstructure:"judge"`
 	Diff        DiffConfig        `mapstructure:"diff"`
 	Health      HealthConfig      `mapstructure:"health"`
+	Automation  AutomationConfig  `mapstructure:"automation"`
 	LogLevel    string            `mapstructure:"log_level"`
 }
 
@@ -250,6 +251,13 @@ type HealthConfig struct {
 	Threshold float64 `mapstructure:"threshold"`
 }
 
+// AutomationConfig holds non-interactive sync settings.
+type AutomationConfig struct {
+	BatchPR     bool   `mapstructure:"batch_pr"`
+	AutoMerge   bool   `mapstructure:"auto_merge"`
+	MergeMethod string `mapstructure:"merge_method"`
+}
+
 // Load reads configuration from file, environment, and defaults.
 func Load(cfgFile string) (*Config, error) {
 	v := viper.New()
@@ -298,6 +306,9 @@ func Load(cfgFile string) (*Config, error) {
 	v.SetDefault("diff.track_display_name", false)
 	v.SetDefault("health.enabled", true)
 	v.SetDefault("health.threshold", 0.90)
+	v.SetDefault("automation.batch_pr", false)
+	v.SetDefault("automation.auto_merge", false)
+	v.SetDefault("automation.merge_method", "squash")
 	v.SetDefault("judge.enabled", false)
 	v.SetDefault("judge.provider", "anthropic")
 	v.SetDefault("judge.model", "claude-sonnet-4-20250514")
@@ -365,6 +376,9 @@ func Load(cfgFile string) (*Config, error) {
 	_ = v.BindEnv("judge.model", "SENTINEL_JUDGE_MODEL")
 	_ = v.BindEnv("judge.on_reject", "SENTINEL_JUDGE_ON_REJECT")
 	_ = v.BindEnv("judge.max_tokens", "SENTINEL_JUDGE_MAX_TOKENS")
+	_ = v.BindEnv("automation.batch_pr", "SENTINEL_AUTOMATION_BATCH_PR")
+	_ = v.BindEnv("automation.auto_merge", "SENTINEL_AUTOMATION_AUTO_MERGE")
+	_ = v.BindEnv("automation.merge_method", "SENTINEL_AUTOMATION_MERGE_METHOD")
 
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

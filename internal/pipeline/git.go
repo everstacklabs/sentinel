@@ -13,9 +13,10 @@ import (
 
 // GitOps handles git operations for the catalog repo.
 type GitOps struct {
-	repo     *git.Repository
-	worktree *git.Worktree
-	token    string
+	repo       *git.Repository
+	worktree   *git.Worktree
+	token      string
+	branchName string
 }
 
 // OpenRepo opens a git repository at the given path.
@@ -47,9 +48,14 @@ func (g *GitOps) CreateBranch(name string) error {
 		return fmt.Errorf("creating branch ref: %w", err)
 	}
 
-	return g.worktree.Checkout(&git.CheckoutOptions{
+	if err := g.worktree.Checkout(&git.CheckoutOptions{
 		Branch: branchRef,
-	})
+	}); err != nil {
+		return err
+	}
+
+	g.branchName = name
+	return nil
 }
 
 // AddAll stages all changes.
@@ -72,12 +78,35 @@ func (g *GitOps) Commit(message string) error {
 
 // Push pushes the current branch to origin.
 func (g *GitOps) Push() error {
+	branchName, err := g.pushBranch()
+	if err != nil {
+		return err
+	}
+
 	return g.repo.Push(&git.PushOptions{
 		RemoteName: "origin",
-		RefSpecs:   []gitconfig.RefSpec{gitconfig.RefSpec("+refs/heads/*:refs/heads/*")},
+		RefSpecs: []gitconfig.RefSpec{
+			gitconfig.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)),
+		},
 		Auth: &githttp.BasicAuth{
 			Username: "x-access-token",
 			Password: g.token,
 		},
 	})
+}
+
+func (g *GitOps) pushBranch() (string, error) {
+	if g.branchName != "" {
+		return g.branchName, nil
+	}
+
+	headRef, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("getting HEAD: %w", err)
+	}
+	if !headRef.Name().IsBranch() {
+		return "", fmt.Errorf("HEAD is not a branch")
+	}
+
+	return headRef.Name().Short(), nil
 }

@@ -80,11 +80,14 @@ jobs:
           SENTINEL_GITHUB_OWNER: everstacklabs
           SENTINEL_GITHUB_REPO: llm-catalog
           SENTINEL_GITHUB_BASE_BRANCH: master
+          SENTINEL_AUTOMATION_MERGE_METHOD: squash
         run: |
-          ARGS="sync"
+          ARGS="sync --batch-pr"
 
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
+          else
+            ARGS="$ARGS --auto-merge"
           fi
 
           if [ -n "${{ github.event.inputs.providers }}" ]; then

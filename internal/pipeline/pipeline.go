@@ -61,6 +61,17 @@ type SyncResult struct {
 	Error       error
 }
 
+// BatchSyncResult holds the outcome of a batch sync run.
+type BatchSyncResult struct {
+	Results          []SyncResult
+	ChangeSets       []*diff.ChangeSet
+	PRNumber         int
+	PRDraft          bool
+	AutoMergeEnabled bool
+	Skipped          bool
+	SkipReason       string
+}
+
 // Sync runs the full pipeline for the configured providers.
 func (p *Pipeline) Sync(ctx context.Context) ([]SyncResult, error) {
 	if err := p.LoadCatalog(); err != nil {
@@ -75,6 +86,176 @@ func (p *Pipeline) Sync(ctx context.Context) ([]SyncResult, error) {
 	}
 
 	return results, nil
+}
+
+// SyncBatch discovers all configured providers, writes only safe changes, and
+// creates one catalog PR for the run. Provider-level failures are reported in
+// the result but do not block unrelated safe provider changes.
+func (p *Pipeline) SyncBatch(ctx context.Context) (*BatchSyncResult, error) {
+	if err := p.LoadCatalog(); err != nil {
+		return nil, err
+	}
+
+	result := &BatchSyncResult{}
+	safeChanges := make([]*diff.ChangeSet, 0, len(p.cfg.Providers))
+	judgeResults := make(map[string]*judge.Result)
+
+	for _, providerName := range p.cfg.Providers {
+		providerResult, safe := p.prepareBatchProvider(ctx, providerName)
+		result.Results = append(result.Results, providerResult)
+		if safe {
+			safeChanges = append(safeChanges, providerResult.ChangeSet)
+			if providerResult.JudgeResult != nil {
+				judgeResults[providerName] = providerResult.JudgeResult
+			}
+		}
+	}
+
+	result.ChangeSets = safeChanges
+	if len(safeChanges) == 0 {
+		result.Skipped = true
+		result.SkipReason = "no safe changes"
+		return result, nil
+	}
+
+	if p.cfg.DryRun {
+		result.Skipped = true
+		result.SkipReason = "dry run"
+		return result, nil
+	}
+
+	if err := p.writeBatchChanges(safeChanges); err != nil {
+		return result, err
+	}
+
+	if err := p.bumpVersionForBatch(safeChanges); err != nil {
+		return result, fmt.Errorf("bumping version: %w", err)
+	}
+
+	if err := catalog.GenerateManifest(p.cfg.CatalogPath); err != nil {
+		return result, fmt.Errorf("generating manifest: %w", err)
+	}
+
+	if err := p.validateCatalog(); err != nil {
+		return result, err
+	}
+
+	if p.cfg.GitHub.Token != "" {
+		prNum, autoMergeEnabled, err := p.createBatchPR(ctx, safeChanges, false, judgeResults)
+		if err != nil {
+			return result, fmt.Errorf("creating batch PR: %w", err)
+		}
+		result.PRNumber = prNum
+		result.AutoMergeEnabled = autoMergeEnabled
+	}
+
+	return result, nil
+}
+
+func (p *Pipeline) prepareBatchProvider(ctx context.Context, providerName string) (SyncResult, bool) {
+	result := SyncResult{Provider: providerName}
+
+	cs, err := p.discoverAndDiff(ctx, providerName)
+	if err != nil {
+		result.Error = err
+		return result, false
+	}
+	result.ChangeSet = cs
+
+	if !cs.HasChanges() {
+		result.Skipped = true
+		result.SkipReason = "no changes"
+		return result, false
+	}
+	if len(cs.New) == 0 && len(cs.Updated) == 0 {
+		result.Skipped = true
+		result.SkipReason = "deprecation-only changes require manual review"
+		return result, false
+	}
+
+	draft, blocked, reason := assessRisk(cs)
+	if blocked {
+		result.Skipped = true
+		result.SkipReason = reason
+		return result, false
+	}
+	if draft {
+		result.PRDraft = true
+		result.Skipped = true
+		result.SkipReason = "risk requires draft/manual review"
+		return result, false
+	}
+
+	valResult := p.validateChanges(cs)
+	if valResult.HasErrors() {
+		result.Error = fmt.Errorf("validation failed:\n%s", validate.FormatResult(valResult))
+		return result, false
+	}
+
+	judgeResult, err := p.runJudge(ctx, cs)
+	if err != nil {
+		slog.Warn("judge evaluation failed, skipping provider in batch mode", "provider", providerName, "error", err)
+		result.Error = fmt.Errorf("judge evaluation failed: %w", err)
+		return result, false
+	}
+	if judgeResult != nil {
+		result.JudgeResult = judgeResult
+		behavior := judge.OnRejectBehavior(p.cfg.Judge.OnReject)
+		if forceDraft := judge.ApplyToChangeSet(cs, judgeResult, behavior); forceDraft {
+			result.PRDraft = true
+			result.Skipped = true
+			result.SkipReason = "judge requires draft/manual review"
+			return result, false
+		}
+		if !cs.HasChanges() {
+			result.Skipped = true
+			result.SkipReason = "all models rejected by judge"
+			return result, false
+		}
+	}
+
+	return result, true
+}
+
+func (p *Pipeline) writeBatchChanges(changesets []*diff.ChangeSet) error {
+	writer := catalog.NewWriter(p.cfg.CatalogPath)
+	for _, cs := range changesets {
+		for _, m := range cs.New {
+			if _, err := writer.WriteModel(cs.Provider, m.Model); err != nil {
+				return fmt.Errorf("writing new model %s/%s: %w", cs.Provider, m.Name, err)
+			}
+		}
+		for _, u := range cs.Updated {
+			if _, err := writer.WriteModel(cs.Provider, u.Model); err != nil {
+				return fmt.Errorf("writing updated model %s/%s: %w", cs.Provider, u.Name, err)
+			}
+		}
+		p.updateMetadata(cs.Provider, cs)
+	}
+	return nil
+}
+
+func (p *Pipeline) bumpVersionForBatch(changesets []*diff.ChangeSet) error {
+	hasNew := false
+	for _, cs := range changesets {
+		if len(cs.New) > 0 {
+			hasNew = true
+			break
+		}
+	}
+	return p.bumpVersionWithMode(hasNew)
+}
+
+func (p *Pipeline) validateCatalog() error {
+	cat, err := catalog.Load(p.cfg.CatalogPath)
+	if err != nil {
+		return fmt.Errorf("loading catalog after write: %w", err)
+	}
+	result := validate.ValidateCatalog(cat)
+	if result.HasErrors() {
+		return fmt.Errorf("catalog validation failed after write:\n%s", validate.FormatResult(result))
+	}
+	return nil
 }
 
 // Diff runs discovery and diff without writing changes.
@@ -302,6 +483,10 @@ func (p *Pipeline) updateMetadata(provider string, cs *diff.ChangeSet) {
 }
 
 func (p *Pipeline) bumpVersion(cs *diff.ChangeSet) error {
+	return p.bumpVersionWithMode(len(cs.New) > 0)
+}
+
+func (p *Pipeline) bumpVersionWithMode(hasNew bool) error {
 	versionPath := filepath.Join(p.cfg.CatalogPath, "version.txt")
 	data, err := os.ReadFile(versionPath)
 	if err != nil {
@@ -309,7 +494,7 @@ func (p *Pipeline) bumpVersion(cs *diff.ChangeSet) error {
 	}
 
 	version := strings.TrimSpace(string(data))
-	newVersion, err := bumpSemver(version, len(cs.New) > 0)
+	newVersion, err := bumpSemver(version, hasNew)
 	if err != nil {
 		return err
 	}

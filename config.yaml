@@ -74,6 +74,12 @@ health:
   enabled: true
   threshold: 0.90
 
+# Automation settings
+automation:
+  batch_pr: false
+  auto_merge: false
+  merge_method: "squash" # "squash", "merge", or "rebase"
+
 # OpenAI settings
 openai:
   # api_key: set via OPENAI_API_KEY env var

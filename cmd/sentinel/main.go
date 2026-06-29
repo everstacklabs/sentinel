@@ -118,6 +118,15 @@ func syncCmd() *cobra.Command {
 			configureAdapters(cfg)
 
 			p := pipeline.New(cfg)
+			if cfg.Automation.BatchPR {
+				result, err := p.SyncBatch(cmd.Context())
+				if err != nil {
+					return err
+				}
+				logBatchSyncResult(result)
+				return nil
+			}
+
 			results, err := p.Sync(cmd.Context())
 			if err != nil {
 				return err
@@ -146,6 +155,8 @@ func syncCmd() *cobra.Command {
 
 	cmd.Flags().Bool("dry-run", false, "Show what would change without writing")
 	cmd.Flags().StringSlice("providers", nil, "Providers to sync (default: all configured)")
+	cmd.Flags().Bool("batch-pr", false, "Create one PR for all safe provider changes")
+	cmd.Flags().Bool("auto-merge", false, "Enable GitHub auto-merge for safe non-draft PRs")
 
 	return cmd
 }
@@ -287,7 +298,57 @@ func applySyncFlags(cmd *cobra.Command, cfg *config.Config) {
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		cfg.DryRun = dryRun
 	}
+	if cmd.Flags().Changed("batch-pr") {
+		batchPR, _ := cmd.Flags().GetBool("batch-pr")
+		cfg.Automation.BatchPR = batchPR
+	}
+	if cmd.Flags().Changed("auto-merge") {
+		autoMerge, _ := cmd.Flags().GetBool("auto-merge")
+		cfg.Automation.AutoMerge = autoMerge
+	}
 	applyProviderFlag(cmd, cfg)
+}
+
+func logBatchSyncResult(result *pipeline.BatchSyncResult) {
+	failures := 0
+	skipped := 0
+	eligible := 0
+
+	for _, r := range result.Results {
+		if r.Error != nil {
+			failures++
+			slog.Error("batch sync provider failed", "provider", r.Provider, "error", r.Error)
+			continue
+		}
+		if r.Skipped {
+			skipped++
+			slog.Info("batch sync provider skipped", "provider", r.Provider, "reason", r.SkipReason)
+			continue
+		}
+		eligible++
+		slog.Info("batch sync provider included", "provider", r.Provider)
+	}
+
+	if result.PRNumber > 0 {
+		slog.Info("batch sync PR created",
+			"pr", result.PRNumber,
+			"draft", result.PRDraft,
+			"auto_merge_enabled", result.AutoMergeEnabled,
+			"included_providers", eligible,
+			"skipped_providers", skipped,
+			"failed_providers", failures,
+		)
+		return
+	}
+
+	if result.Skipped {
+		slog.Info("batch sync skipped",
+			"reason", result.SkipReason,
+			"included_providers", eligible,
+			"skipped_providers", skipped,
+			"failed_providers", failures,
+		)
+	}
 }
 
 func applyProviderFlag(cmd *cobra.Command, cfg *config.Config) {
