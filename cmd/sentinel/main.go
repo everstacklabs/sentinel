@@ -84,9 +84,10 @@ var cfgFile string
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "sentinel",
-		Short: "Keeps your AI model catalog in sync with reality.",
-		Long:  "An open-source tool that discovers AI models from provider APIs and opens PRs to keep your catalog up to date.",
+		Use:          "sentinel",
+		Short:        "Keeps your AI model catalog in sync with reality.",
+		Long:         "An open-source tool that discovers AI models from provider APIs and opens PRs to keep your catalog up to date.",
+		SilenceUsage: true,
 	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ./config.yaml)")
@@ -112,17 +113,29 @@ func syncCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			applySyncFlags(cmd, cfg)
 
 			configureAdapters(cfg)
 
 			p := pipeline.New(cfg)
+			if cfg.Automation.BatchPR {
+				result, err := p.SyncBatch(cmd.Context())
+				if err != nil {
+					return err
+				}
+				logBatchSyncResult(result)
+				return nil
+			}
+
 			results, err := p.Sync(cmd.Context())
 			if err != nil {
 				return err
 			}
 
+			failures := 0
 			for _, r := range results {
 				if r.Error != nil {
+					failures++
 					slog.Error("sync failed", "provider", r.Provider, "error", r.Error)
 				} else if r.Skipped {
 					slog.Info("sync skipped", "provider", r.Provider, "reason", r.SkipReason)
@@ -133,18 +146,23 @@ func syncCmd() *cobra.Command {
 				}
 			}
 
+			if failures > 0 {
+				return fmt.Errorf("%d provider sync(s) failed", failures)
+			}
 			return nil
 		},
 	}
 
 	cmd.Flags().Bool("dry-run", false, "Show what would change without writing")
 	cmd.Flags().StringSlice("providers", nil, "Providers to sync (default: all configured)")
+	cmd.Flags().Bool("batch-pr", false, "Create one PR for all safe provider changes")
+	cmd.Flags().Bool("auto-merge", false, "Enable GitHub auto-merge for safe non-draft PRs")
 
 	return cmd
 }
 
 func diffCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "diff",
 		Short: "Show what would change (no writes)",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -152,6 +170,7 @@ func diffCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			applyProviderFlag(cmd, cfg)
 
 			configureAdapters(cfg)
 
@@ -175,6 +194,10 @@ func diffCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringSlice("providers", nil, "Providers to diff (default: all configured)")
+
+	return cmd
 }
 
 func discoverCmd() *cobra.Command {
@@ -268,6 +291,73 @@ func loadConfig() (*config.Config, error) {
 		return nil, fmt.Errorf("loading config: %w", err)
 	}
 	return cfg, nil
+}
+
+func applySyncFlags(cmd *cobra.Command, cfg *config.Config) {
+	if cmd.Flags().Changed("dry-run") {
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		cfg.DryRun = dryRun
+	}
+	if cmd.Flags().Changed("batch-pr") {
+		batchPR, _ := cmd.Flags().GetBool("batch-pr")
+		cfg.Automation.BatchPR = batchPR
+	}
+	if cmd.Flags().Changed("auto-merge") {
+		autoMerge, _ := cmd.Flags().GetBool("auto-merge")
+		cfg.Automation.AutoMerge = autoMerge
+	}
+	applyProviderFlag(cmd, cfg)
+}
+
+func logBatchSyncResult(result *pipeline.BatchSyncResult) {
+	failures := 0
+	skipped := 0
+	eligible := 0
+
+	for _, r := range result.Results {
+		if r.Error != nil {
+			failures++
+			slog.Error("batch sync provider failed", "provider", r.Provider, "error", r.Error)
+			continue
+		}
+		if r.Skipped {
+			skipped++
+			slog.Info("batch sync provider skipped", "provider", r.Provider, "reason", r.SkipReason)
+			continue
+		}
+		eligible++
+		slog.Info("batch sync provider included", "provider", r.Provider)
+	}
+
+	if result.PRNumber > 0 {
+		slog.Info("batch sync PR created",
+			"pr", result.PRNumber,
+			"draft", result.PRDraft,
+			"auto_merge_enabled", result.AutoMergeEnabled,
+			"included_providers", eligible,
+			"skipped_providers", skipped,
+			"failed_providers", failures,
+		)
+		return
+	}
+
+	if result.Skipped {
+		slog.Info("batch sync skipped",
+			"reason", result.SkipReason,
+			"included_providers", eligible,
+			"skipped_providers", skipped,
+			"failed_providers", failures,
+		)
+	}
+}
+
+func applyProviderFlag(cmd *cobra.Command, cfg *config.Config) {
+	if cmd.Flags().Changed("providers") {
+		providers, _ := cmd.Flags().GetStringSlice("providers")
+		if len(providers) > 0 {
+			cfg.Providers = providers
+		}
+	}
 }
 
 func configureAdapters(cfg *config.Config) {

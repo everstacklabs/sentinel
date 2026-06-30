@@ -34,7 +34,7 @@
 
 Maintaining 1000+ AI models across multiple providers by hand does not scale. Pricing changes, new models appear, context windows get updated, capabilities shift -- and nobody notices until something breaks. No existing tool combines scheduled multi-provider discovery with metadata-rich catalog updates (pricing, context windows, capabilities) and risk-gated pull requests.
 
-Sentinel automates the entire loop: discover what changed, diff it against the catalog, validate the data, and open a PR for human review.
+Sentinel automates the entire loop: discover what changed, diff it against the catalog, validate the data, and open a catalog PR. In unattended mode, safe changes are batched into one PR and auto-merge is enabled after CI passes.
 
 ---
 
@@ -64,7 +64,7 @@ flowchart TB
     risk --> git
 ```
 
-Each provider runs in isolation. If one provider fails, the others still produce their PRs.
+Each provider runs in isolation. If one provider fails, the others can still produce catalog updates.
 
 ### Pipeline
 
@@ -73,12 +73,12 @@ Each provider runs in isolation. If one provider fails, the others still produce
 | **Discover** | Provider adapters call source APIs, return `[]DiscoveredModel` matching the catalog YAML schema |
 | **Diff** | Compares discovered models against existing catalog. Produces changeset: new, updated, deprecation candidates, possible renames |
 | **Validate** | Schema rules: required fields, pricing bounds, limits ranges, filename-to-name consistency. Errors block the PR |
-| **Judge** | Optional. Sends changeset to an LLM to flag suspicious values. Non-fatal: failures log a warning and continue |
+| **Judge** | Optional. Sends changeset to an LLM to flag suspicious values. In batch mode, judge failures or draft verdicts skip that provider from unattended merge |
 | **Smart merge** | Writes YAML via `yaml.Node` trees. Overlays discovered fields, preserves hand-edited keys and field ordering |
 | **Version bump** | MINOR for new models, PATCH for updates only. Never auto-MAJOR |
 | **Manifest** | Regenerates `manifest.yaml` with provider list, file paths, aggregate stats |
-| **Risk gates** | >25 changes, >3 deprecation candidates, or price deltas >35%/2x trigger draft PRs |
-| **Git + PR** | Branch (`sentinel/<provider>-<timestamp>`), commit, push, open PR with markdown summary |
+| **Risk gates** | >25 changes, >3 deprecation candidates, or price deltas >35%/2x require draft/manual review |
+| **Git + PR** | Branch, commit, push, open PR with markdown summary; batch mode can enable GitHub auto-merge |
 
 ---
 
@@ -88,6 +88,7 @@ Each provider runs in isolation. If one provider fails, the others still produce
 sentinel sync                           # full pipeline: discover → diff → validate → write → PR
 sentinel sync --dry-run                 # show what would change, don't write or create PRs
 sentinel sync --providers=openai        # sync a specific provider only
+sentinel sync --batch-pr --auto-merge   # one safe catalog PR, enable GitHub auto-merge
 sentinel diff                           # preview changes, exit code 2 if changes found
 sentinel discover --provider=openai     # print discovered models to stdout
 sentinel validate --catalog-path=./cat  # validate catalog YAML (CI check)
@@ -107,7 +108,7 @@ sentinel validate --catalog-path=./cat  # validate catalog YAML (CI check)
 Copy `config.example.yaml` to `config.yaml`:
 
 ```yaml
-catalog_path: "../model-catalog"
+catalog_path: "../llm-catalog"
 cache_dir: "~/.cache/sentinel"
 cache_ttl: "1h"
 providers:
@@ -119,9 +120,14 @@ risk_mode: "strict" # "strict" or "relaxed"
 log_level: "info"
 
 github:
-  owner: "your-org"
-  repo: "your-catalog-repo"
-  base_branch: "main"
+  owner: "everstacklabs"
+  repo: "llm-catalog"
+  base_branch: "master"
+
+automation:
+  batch_pr: false
+  auto_merge: false
+  merge_method: "squash"
 
 openai:
   base_url: "https://api.openai.com/v1"
@@ -161,6 +167,8 @@ New models get a fresh file. In both cases, an `x_updater` block is appended wit
 | All clear | Normal PR |
 
 In `strict` mode (default), blocked changesets abort the PR for that provider. In `relaxed` mode, they proceed as normal PRs.
+
+In `--batch-pr` mode, draft-worthy or judge-flagged provider changes are skipped from the unattended batch instead of blocking safe providers. The scheduled workflow runs `sentinel sync --batch-pr --auto-merge`, so catalog updates merge without a reviewer once the catalog repo checks pass.
 
 ---
 
@@ -208,7 +216,7 @@ See `internal/adapter/providers/openai/` for a complete reference implementation
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | Push/PR to `main` | Build, test (`go test ./...`), lint (`golangci-lint`) |
-| `sync.yml` | Every 12h (6am/6pm UTC) + `workflow_dispatch` | Checkout sentinel + catalog repo, build, run `sentinel sync` |
+| `sync.yml` | Every 12h (6am/6pm UTC) + `workflow_dispatch` | Checkout sentinel + catalog repo, build, run `sentinel sync --batch-pr --auto-merge` |
 
 ---
 

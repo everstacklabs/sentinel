@@ -41,9 +41,9 @@ jobs:
       - name: Checkout model catalog
         uses: actions/checkout@v4
         with:
-          repository: midfusionlabs/model-catalog
+          repository: everstacklabs/llm-catalog
           token: ${{ secrets.GH_PAT }}
-          path: model-catalog
+          path: llm-catalog
 
       - name: Run sync
         env:
@@ -76,15 +76,18 @@ jobs:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
           VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
           BAILING_API_TOKEN: ${{ secrets.BAILING_API_TOKEN }}
-          SENTINEL_CATALOG_PATH: ./model-catalog
-          SENTINEL_GITHUB_OWNER: midfusionlabs
-          SENTINEL_GITHUB_REPO: model-catalog
-          SENTINEL_GITHUB_BASE_BRANCH: main
+          SENTINEL_CATALOG_PATH: ./llm-catalog
+          SENTINEL_GITHUB_OWNER: everstacklabs
+          SENTINEL_GITHUB_REPO: llm-catalog
+          SENTINEL_GITHUB_BASE_BRANCH: master
+          SENTINEL_AUTOMATION_MERGE_METHOD: squash
         run: |
-          ARGS="sync"
+          ARGS="sync --batch-pr"
 
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
+          else
+            ARGS="$ARGS --auto-merge"
           fi
 
           if [ -n "${{ github.event.inputs.providers }}" ]; then

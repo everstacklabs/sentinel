@@ -27,4 +27,4 @@ sync:
 	go run ./cmd/sentinel sync --dry-run
 
 validate:
-	go run ./cmd/sentinel validate --catalog-path=../model-catalog
+	go run ./cmd/sentinel validate --catalog-path=../llm-catalog

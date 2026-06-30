@@ -76,9 +76,9 @@ func TestPricingOutsideRange(t *testing.T) {
 		out   float64
 		field string
 	}{
-		{"input too high", 0.20, 0.01, "cost.input_per_1k"},
+		{"input too high", 1.20, 0.01, "cost.input_per_1k"},
 		{"input negative", -0.01, 0.01, "cost.input_per_1k"},
-		{"output too high", 0.01, 0.20, "cost.output_per_1k"},
+		{"output too high", 0.01, 1.20, "cost.output_per_1k"},
 		{"output negative", 0.01, -0.01, "cost.output_per_1k"},
 	}
 

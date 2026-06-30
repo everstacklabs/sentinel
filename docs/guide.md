@@ -91,7 +91,7 @@ You can add any extra fields you need (e.g., `api_type`, `custom_notes`). Sentin
 ## 2. Install Sentinel
 
 ```bash
-git clone https://github.com/midfusionlabs/sentinel.git
+git clone https://github.com/everstacklabs/sentinel.git
 cd sentinel
 make build
 ```
@@ -232,20 +232,23 @@ jobs:
         with:
           repository: your-org/your-catalog
           token: ${{ secrets.GH_PAT }}
-          path: model-catalog
+          path: llm-catalog
 
       - name: Run sync
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SENTINEL_CATALOG_PATH: ./model-catalog
+          SENTINEL_CATALOG_PATH: ./llm-catalog
           SENTINEL_GITHUB_OWNER: your-org
           SENTINEL_GITHUB_REPO: your-catalog
           SENTINEL_GITHUB_BASE_BRANCH: main
+          SENTINEL_AUTOMATION_MERGE_METHOD: squash
         run: |
-          ARGS="sync"
+          ARGS="sync --batch-pr"
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             ARGS="$ARGS --dry-run"
+          else
+            ARGS="$ARGS --auto-merge"
           fi
           if [ -n "${{ github.event.inputs.providers }}" ]; then
             ARGS="$ARGS --providers=${{ github.event.inputs.providers }}"
@@ -259,22 +262,24 @@ Add these to your GitHub environment (Settings > Environments > your environment
 
 | Secret | Purpose |
 |---|---|
-| `GH_PAT` | Fine-grained token with `contents: write` and `pull-requests: write` on your catalog repo |
+| `GH_PAT` | Fine-grained token with `contents: write` and `pull-requests: write` on your catalog repo. Auto-merge also requires the catalog repo to allow auto-merge. |
 | `OPENAI_API_KEY` | OpenAI API key for model discovery |
 | `ANTHROPIC_API_KEY` | Optional. Required if syncing Anthropic models or using LLM-as-judge |
 
 ### How PRs work
 
-Each sync run creates one PR per provider. The PR includes:
+The scheduled workflow runs `sentinel sync --batch-pr --auto-merge`. Each run creates one PR containing all provider changes that can safely be merged without review. The PR includes:
 - A table of new, updated, and unchanged models
 - Field-level diffs for updated models
 - Deprecation candidates (models in catalog but not discovered)
 - Possible renames (heuristic matches)
 - Validation warnings
 
-PRs are opened as drafts when risk thresholds are exceeded (>25 changes, >3 deprecation candidates, or large price swings). Otherwise they're normal PRs ready for review.
+Risky provider changes are skipped from the unattended batch when thresholds are exceeded (>25 changes, >3 deprecation candidates, or large price swings), when validation fails, or when the judge requires manual review. Safe provider changes still proceed.
 
-Branch naming: `sentinel/<provider>-<timestamp>` (e.g., `sentinel/openai-20260218-060000`).
+Branch naming: `sentinel/model-sync-<timestamp>` for batch sync. Non-batch sync still uses `sentinel/<provider>-<timestamp>`.
+
+For full unattended merges, add catalog-repo CI that runs `sentinel validate` and enable auto-merge in the catalog repository settings. GitHub will merge the PR after required checks pass.
 
 ## 8. Enable LLM-as-judge (optional)
 
@@ -293,7 +298,7 @@ judge:
 
 Set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY` if using OpenAI as the judge provider).
 
-The judge is non-fatal. If the LLM call fails, the pipeline logs a warning and continues without it.
+In non-batch sync, the judge is non-fatal: if the LLM call fails, the pipeline logs a warning and continues without it. In `--batch-pr` sync, judge failures or draft verdicts skip that provider from the unattended PR.
 
 ## 9. Adding custom fields
 
